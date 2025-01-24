@@ -13,8 +13,6 @@ import subprocess
 
 
 
-
-
 def step1_upload(request):
     if request.method == 'POST' and request.FILES.get('model_file'):
         model_file = request.FILES['model_file']
