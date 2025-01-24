@@ -1,0 +1,83 @@
+        body {
+            font-family: 'Space Grotesk', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #000; /* Hintergrund schwarz */
+            color: rgb(255, 255, 255); /* Textfarbe weiß für Lesbarkeit */
+        }
+
+        .container {
+            background-color: #151515;
+            padding: 20px;
+            border-radius: 50px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 100%;
+            max-width: 300px;
+            min-height: 150px; /* Verwenden Sie min-height statt height */
+            display: flex;
+            flex-direction: column;
+            justify-content: center; /* Vertikal zentrieren */
+            align-items: center; /* Horizontal zentrieren */
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        input[type="file"] {
+            display: none; /* Hide the default file input */
+        }
+        
+        label {
+            font-family: 'Space Grotesk', Arial, sans-serif;
+            font-weight: 700; /* Fett */
+            background-color: #FFD61C;
+            color: rgb(0, 0, 0);
+            border-radius: 50px; /* Corner Radius */
+            padding: 10px 20px;
+                        cursor: pointer;
+            font-size: 16px;
+            width: 142px;
+            border: 2px solid transparent; /* Anfangs unsichtbarer Rand */
+            box-sizing: border-box; /* Wichtige Zeile für inneren Rand */
+        }
+        label:hover {
+            background-color: #000000; /* Hover-Farbe */
+            color: #E6BF18;
+            border: 2px solid #E6BF18; /* Border mit Breite, Stil und Farbe */
+        }
+
+        button {
+            font-family: 'Space Grotesk', Arial, sans-serif;
+            font-weight: 700; /* Fett */
+            background-color: #FFD61C;
+            color: rgb(0, 0, 0);
+            border-radius: 50px; /* Corner Radius */
+            padding: 10px 0px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 142px;
+            border: 2px solid transparent; /* Anfangs unsichtbarer Rand */
+            box-sizing: border-box; /* Wichtige Zeile für inneren Rand */
+        }
+
+        button:hover {
+        background-color: #000000; /* Hover-Farbe */
+        color: #E6BF18;
+        border: 2px solid #E6BF18; /* Border mit Breite, Stil und Farbe */
+        }
+
+        .buttons-container {
+            display: flex;
+            flex-direction: column; /* Stack buttons vertically */
+            justify-content: center; /* Vertically center the buttons */
+            align-items: center; /* Horizontally center the buttons */
+            gap: 10px; /* Space between buttons */
+            margin-top: 20px;
+        }

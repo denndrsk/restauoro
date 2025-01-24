@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Viewer</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Hinweis: Importiere Three.js und die benötigten Module -->
+    <script type="module">
+        import * as THREE from '/static/js/three.module.min.js';
+        import { OrbitControls } from '/static/js/OrbitControls.js';
+        import { STLLoader } from '/static/js/STLLoader.js';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Szene und Renderer einrichten
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.getElementById('viewer').appendChild(renderer.domElement);
+
+            // Licht hinzufügen
+            const light = new THREE.DirectionalLight(0xffffff, 1);
+            light.position.set(5, 10, 7.5);
+            scene.add(light);
+
+            // STL-Datei laden
+            const loader = new STLLoader();
+            loader.load('/static/models/example.stl', (geometry) => {
+                const material = new THREE.MeshPhongMaterial({ color: 0x555555 });
+                const mesh = new THREE.Mesh(geometry, material);
+                scene.add(mesh);
+            });
+
+            // OrbitControls hinzufügen
+            const controls = new OrbitControls(camera, renderer.domElement);
+            camera.position.set(0, 0, 5);
+            controls.update();
+
+            // Animation
+            function animate() {
+                requestAnimationFrame(animate);
+                renderer.render(scene, camera);
+            }
+            animate();
+        });
+    </script>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center mb-4">3D Viewer mit Three.js</h1>
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div id="viewer" style="width: 100%; height: 600px;"></div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

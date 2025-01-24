@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload model</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+    {% load static %}
+    <link rel="stylesheet" type="text/css" href="{% static 'css/styles_upload.css' %}">
+    
+</head>
+<body>
+    <div class="container">
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="form-group">
+                <!-- Label is styled as a button to trigger the file input -->
+                <label for="model_file">Select model</label>
+                <input type="file" name="model_file" id="model_file" accept=".stl" required>
+            </div>
+            
+            <div class="buttons-container">
+                <!-- Submit button to upload the file -->
+                <button type="submit"> Load model</button>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

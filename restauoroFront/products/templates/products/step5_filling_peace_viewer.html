@@ -1,0 +1,8 @@
+<!-- products/templates/products/step5_final_confirm.html -->
+<h2>Wizard abgeschlossen</h2>
+<p>Der Prozess ist abgeschlossen. Möchten Sie das Modell herunterladen?</p>
+<form method="POST">
+    {% csrf_token %}
+    <button type="submit" name="confirm">Abschließen</button>
+    <button type="submit" name="retry">Neues Modell hochladen</button>
+</form>

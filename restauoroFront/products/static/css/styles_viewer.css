@@ -1,0 +1,208 @@
+/* Allgemeine Stile */
+:root {
+    --red-color: #FF6E61;
+    --yellow-color: #FFD61C;
+    --hover-bg-color: #000000;
+    --hover-border-red: #FF6E61;
+    --hover-border-yellow: #E6BF18;
+    --font-family: 'Space Grotesk', Arial, sans-serif;
+}
+
+html, body {
+    font-family: var(--font-family);
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    background-color: #000000; /* Hintergrund schwarz */
+    color: rgb(255, 255, 255); /* Textfarbe weiß für Lesbarkeit */
+    font-size: 16px; /* Standard-Schriftgröße */
+}
+
+#viewer-container {
+    width: 80vw;
+    height: 80vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0 auto;
+}
+
+#viewer-container canvas {
+    margin: auto;
+    display: block;
+    position: relative;
+}
+
+#buttons-container {
+    display: flex;
+    flex-wrap: wrap; /* Buttons umbrechen, wenn der Platz nicht reicht */
+    justify-content: space-around; /* Buttons gleichmäßig verteilen */
+    gap: 10px; /* Abstand zwischen Buttons */
+}
+
+.button-container, .input-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+}
+
+.input-container input[type="number"] {
+    padding: 5px;
+    font-size: 16px;
+    width: 80px;
+    border: 2px solid var(--yellow-color);
+    border-radius: 50px;
+    background-color: transparent;
+    outline: none;
+    text-align: center;
+    color: var(--yellow-color);
+    font-weight: bold;
+}
+
+.input-container input[type="number"]::placeholder {
+    color: var(--yellow-color);
+    opacity: 0.7;
+}
+
+/* Basis-Button-Stile */
+button {
+    font-family: var(--font-family);
+    font-weight: 700;
+    border-radius: 50px;
+    padding: 1em 2em; /* Relative Einheit für dynamische Skalierung */
+    font-size: 1rem; /* Skalierbare Schriftgröße */
+    cursor: pointer;
+    border: 2px solid transparent;
+    box-sizing: border-box;
+    width: auto; /* Automatische Breite */
+    max-width: 100%; /* Begrenzung der Breite */
+    min-width: 120px; /* Mindestbreite */
+    text-align: center;
+}
+
+/* Roter Button */
+button.red-button {
+    background-color: var(--red-color);
+    color: rgb(0, 0, 0);
+}
+
+button.red-button:hover {
+    background-color: var(--hover-bg-color);
+    color: var(--red-color);
+    border: 2px solid var(--hover-border-red);
+}
+
+/* Gelber Button */
+button.yellow-button {
+    background-color: var(--yellow-color);
+    color: rgb(0, 0, 0);
+}
+
+button.yellow-button:hover {
+    background-color: var(--hover-bg-color);
+    color: var(--hover-border-yellow);
+    border: 2px solid var(--hover-border-yellow);
+}
+
+/* Responsive Anpassungen */
+
+/* Für Bildschirme bis 800px */
+@media (max-width: 850px) {
+    html, body {
+        font-size: 14px; /* Kleinere Schriftgröße */
+    }
+
+    button {
+        padding: 0.8em 1.6em !important; /* Reduziertes Padding */
+        font-size: 0.8rem!important; /* Kleinere Schriftgröße */
+        min-width: 100px!important; /* Reduzierte Mindestbreite */
+    }
+
+    input[type="number"] {
+        padding: 0.5em;
+        font-size: 0.9rem;
+        width: 70px; /* Kleinere Breite */
+        border-radius: 8px;
+    }
+
+    #buttons-container {
+        justify-content: space-evenly; /* Buttons gleichmäßig nebeneinander */
+    }
+}
+
+/* Für Bildschirme bis 500px */
+@media (max-width: 625px) {
+    html, body {
+        font-size: 12px; /* Noch kleinere Schriftgröße */
+    }
+
+    button {
+        padding: 0.6em 1.2em; /* Weiter reduziertes Padding */
+        font-size: 0.6rem; /* Noch kleinere Schriftgröße */
+        min-width: 80px; /* Kleinere Mindestbreite */
+        border-radius: 50px; /* Weichere Ecken */
+    }
+
+    input[type="number"] {
+        padding: 0.4em;
+        font-size: 0.6rem; /* Kleinere Schriftgröße */
+        width: 60px; /* Kleinere Breite */
+        border-radius: 6px; /* Abgerundete Ecken */
+    }
+
+    #buttons-container {
+        width: 100%; /* Maximale Breite */
+        flex-direction: row; /* Nebeneinander anordnen */
+        justify-content: space-evenly; /* Buttons gleichmäßig nebeneinander */
+        gap: 8px; /* Etwas weniger Abstand zwischen den Buttons */
+    }
+
+    .input-container {
+        width: 100%; /* Maximale Breite */
+        flex-direction: row; /* Elemente nebeneinander anordnen */
+        align-items: center; /* Zentriert ausrichten */
+        gap: 8px; /* Weniger Abstand zwischen den Elementen */
+    }
+
+    .input-container input[type="number"] {
+        width: 50px; /* Noch kleinere Breite für Eingabefelder */
+    }
+}
+
+/* Für Bildschirme bis 390px */
+@media (max-width: 450px) {
+    html, body {
+        font-size: 10px; /* Sehr kleine Schriftgröße */
+    }
+
+    #buttons-container {
+        display: flex;
+        justify-content: space-evenly; /* Gleichmäßiger Abstand zwischen den Buttons */
+        align-items: center;
+        width: 100%; /* Maximale Breite */
+        flex-wrap: wrap; /* Falls es zu eng wird, sollen die Buttons umbrechen */
+    }
+
+    button {
+        padding: 0.4em 1em; /* Noch kleineres Padding */
+        font-size: 0.5rem; /* Sehr kleine Schriftgröße */
+        min-width: 70px; /* Noch kleinere Mindestbreite */
+    }
+
+    .input-container {
+        width: 100%; /* Maximale Breite */
+        padding: 0 10px; /* Etwas Platz links und rechts */
+    }
+
+    input[type="number"] {
+        padding: 0.2em;
+        font-size: 0.4rem; /* Sehr kleine Schriftgröße */
+        width: 50px; /* Noch kleinere Breite für Eingabefelder */
+        border-radius: 6px;
+    }
+}

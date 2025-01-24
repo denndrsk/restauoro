@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Model preview</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+    {% load static %}
+    <link rel="stylesheet" type="text/css" href="{% static 'css/styles_viewer.css' %}">
+  </head>
+<body>
+
+    <!-- Überschrift über dem Viewer -->
+    <div id="header-message" style="font-weight: bold; font-size: 24px; text-align: center; margin-bottom: 20px;">
+        Check the model
+    </div>
+
+    <!-- Container für den STL-Viewer -->
+    <div id="viewer-container"></div>
+
+    <!-- Buttons und Eingabefeld unter dem Viewer -->
+    <div id="buttons-container">
+        <!-- Modell fehlerhaft Button -->
+        <div class="button-container">
+            <form method="POST" action="{% url 'step2_viewer' project_id=project_id %}">
+                {% csrf_token %}
+                <button type="submit" class="red-button">Model faulty</button>
+            </form>
+        </div>
+
+        <!-- Türdicke Eingabefeld -->
+        <!--<div class="input-container">
+            <label for="door-thickness" style="color: #FFD61C; font-weight: bold;">Door thickness:</label>
+            <input type="number" id="door-thickness" name="door_thickness" step="0.01" min="0" placeholder="" required>
+        </div>-->
+
+        <!-- Modell bereinigen Button -->
+        <div class="button-container">
+            <form method="POST" action="{% url 'step2_viewer' project_id=project_id %}">
+                {% csrf_token %}
+                <button type="submit" class="yellow-button">Preview filling peace</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Three.js und STLLoader einbinden -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three/examples/js/loaders/STLLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // Szene, Kamera und Renderer initialisieren
+        var scene = new THREE.Scene();
+        var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        var renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth * 0.8, window.innerHeight * 0.8);  // Dynamische Größenanpassung
+        document.getElementById('viewer-container').appendChild(renderer.domElement);
+
+        // STLLoader und Modell-URL laden
+        var loader = new THREE.STLLoader();
+        var modelUrl = "{{ model_url }}";  // URL des bearbeiteten Modells
+        var fillingPeaceUrl = "{{ filling_peace_url }}";  
+
+        loader.load(modelUrl, function (geometry) {
+            var material = new THREE.MeshStandardMaterial({ 
+                color: 0x8A8A8A,  // Dunkleres Grau
+                roughness: 0.5, 
+                metalness: 0.1 
+            });
+            var mesh = new THREE.Mesh(geometry, material);
+            scene.add(mesh);
+            mesh.position.set(0, 0, 0); // Position des Modells in der Mitte der Szene
+            mesh.scale.set(1, 1, 1); // Skalierung des Modells
+        });
+        loader.load(fillingPeaceUrl, function (geometry) {
+            var material = new THREE.MeshStandardMaterial({ 
+                color: 0xE6BF18,  // Dunkleres Grau
+                roughness: 0.5, 
+                metalness: 0.1,
+                transparent: true, 
+                opacity: 0.5  // 22% Transparenz
+            });
+            var mesh = new THREE.Mesh(geometry, material);
+            scene.add(mesh);
+            mesh.position.set(0, 0, 0); // Position des Modells in der Mitte der Szene
+            mesh.scale.set(1, 1, 1); // Skalierung des Modells
+        });
+
+        // Boden hinzufügen mit 22% Transparenz
+        var planeGeometry = new THREE.PlaneGeometry(50, 50); // Größe des Bodens
+        var planeMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0x808080, 
+            roughness: 0.8,
+            transparent: true, 
+            opacity: 0.1  // 22% Transparenz
+        });
+        var plane = new THREE.Mesh(planeGeometry, planeMaterial);
+        plane.position.z = -0.1; // Leicht unterhalb des Modells in der z-Achse
+        scene.add(plane);
+
+        // Gitter für die Ansicht hinzufügen
+        var gridHelper = new THREE.GridHelper(50, 50); // Größe und Anzahl der Linien
+        gridHelper.rotation.x = Math.PI / 2; // Drehe das Gitter in die x/y-Ebene
+        scene.add(gridHelper);
+
+        // Achsen-Helper hinzufügen und leicht nach oben verschieben, um Überlappung zu vermeiden
+        var axesHelper = new THREE.AxesHelper(0.1); // Größe der Achsen (z.B. 5 Einheiten)
+        axesHelper.position.z = 0.001; // Verschiebe die Achsen leicht nach oben
+        scene.add(axesHelper);
+
+        // Lichter für die Szene hinzufügen
+        var ambientLight = new THREE.AmbientLight(0x404040, 0.5);  // Dunkleres Umgebungslicht
+        scene.add(ambientLight);
+
+        var pointLight1 = new THREE.PointLight(0xffffff, 0.8, 100); // Helligkeit verringert
+        pointLight1.position.set(10, 10, 10);
+        scene.add(pointLight1);
+
+        var pointLight2 = new THREE.PointLight(0xffffff, 0.8, 100); // Helligkeit verringert
+        pointLight2.position.set(-10, -10, 10);
+        scene.add(pointLight2);
+
+        var pointLight3 = new THREE.PointLight(0xffffff, 0.8, 100); // Helligkeit verringert
+        pointLight3.position.set(10, -10, -10);
+        scene.add(pointLight3);
+
+        var pointLight4 = new THREE.PointLight(0xffffff, 0.8, 100); // Helligkeit verringert
+        pointLight4.position.set(-10, 10, -10);
+        scene.add(pointLight4);
+
+        // Kamera-Position und Steuerung
+        // Positioniere die Kamera bei (x = -3.5, y = 2, z = 2.5)
+        camera.position.set(-3, -3, 5);
+        camera.up.set(0, 0, 1);
+        camera.lookAt(0, 0, 2);
+              
+
+
+        //orbitcontrolls ----------------------------------------------------------------
+        var controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+        // Dämpfung aktivieren
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.25;
+
+        // Zoom und Panning aktivieren
+        controls.enableZoom = true;
+        controls.enablePan = true; // Ermöglicht das Verschieben in der Höhe
+
+        // Panning für die vertikale Bewegung erlauben
+        controls.screenSpacePanning = true; // Deaktiviert Panning nur auf der X/Y-Ebene
+
+        // Maximale Neigung der Kamera (verhindert das Kippen des Modells nach unten)
+        //controls.maxPolarAngle = Math.PI / 2; // Verhindert das Kippen unter den Horizont
+
+        // Steuere die Rotationsgeschwindigkeit
+        controls.rotateSpeed = 1.5; // Höhere Werte erhöhen die Drehgeschwindigkeit
+
+        // Steuere die Zoomgeschwindigkeit
+        controls.zoomSpeed = 1.2; // Steuere die Zoomgeschwindigkeit
+
+        //orbitcontrolls ----------------------------------------------------------------
+
+
+        // Animations-Loop
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+            controls.update();
+        }
+        
+        animate();
+
+        // Anpassung der Anzeige bei Fenstergrößeänderung
+        window.addEventListener('resize', function () {
+            renderer.setSize(window.innerWidth * 0.8, window.innerHeight * 0.8);
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+        });
+    </script>
+</body>
+</html>
