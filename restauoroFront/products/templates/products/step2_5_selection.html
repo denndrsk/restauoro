@@ -13,6 +13,8 @@
     <!-- Überschrift über dem Viewer -->
     <div id="header-message" style="font-weight: bold; font-size: 24px; text-align: center; margin-bottom: 20px;">
         Press and hold to select the damaged area.
+    </div>
+    <div id="header-message" style="font-weight: bold; font-size: 24px; text-align: center; margin-bottom: 20px;">
         Override the door thickness if neccesary.
     </div>
 
@@ -25,12 +27,12 @@
         <div class="buttons-container">
             <form method="POST" action="{% url 'step2_viewer' project_id=project_id %}">
                 {% csrf_token %}
-                <button type="submit" class="red-button">Return</button>
+                <button type="submit" class="red-button">return</button>
             </form>
         </div>
         
         <div class="buttons-container">
-            <button id="mode-toggle-button" class="yellow-button">Switch to Selection</button>          
+            <button id="mode-toggle-button" class="yellow-button">switch to selection</button>          
         </div>
         
         
@@ -57,9 +59,10 @@
                 <input type="hidden" id="start_coordinates_z" name="start_coordinates_z" value="">
                 <input type="hidden" id="end_coordinates_x" name="end_coordinates_x" value="">
                 <input type="hidden" id="end_coordinates_z" name="end_coordinates_z" value="">
-
+                <input type="hidden" id="minY" name="minY" value="">
+                <input type="hidden" id="maxY" name="maxY" value="">
                 <input type="hidden" id="offset-y" name="offset-y" value="">
-                <button type="submit" class="yellow-button">Extrude & clean up</button>
+                <button type="submit" class="yellow-button">extrude & clean up</button>
             </form>
         </div>
     </div>
@@ -111,7 +114,7 @@ console.log("Renderer initialized");
 // STLLoader und Modell-URL laden
 var loader = new THREE.STLLoader();
 var modelUrl = "{{ model_url }}";  // URL des bearbeiteten Modells
-
+var mesh;
 // STLLoader und Modell-URL laden
 loader.load(modelUrl, function (geometry) {
     //console.log("STL Model loaded", geometry);  // Füge dies hinzu
@@ -120,7 +123,7 @@ loader.load(modelUrl, function (geometry) {
         roughness: 0.5, 
         metalness: 0.1 
     });
-    var mesh = new THREE.Mesh(geometry, material)
+    mesh = new THREE.Mesh(geometry, material)
     scene.add(mesh);
     mesh.position.set(0, 0, 0); 
     mesh.scale.set(1, 1, 1); 
@@ -296,8 +299,8 @@ document.getElementById('viewer-container').addEventListener('pointerdown', func
     // Update der Linien mit den Ecken der Auswahl
     updateSelectionLine();
     document.getElementById('start-coordinates').textContent = `X: ${selectionBox.min.x.toFixed(2)}, Z: ${selectionBox.min.z.toFixed(2)}`;
-    document.getElementById('start_coordinates_x').value = startSelectionCoords.x.toFixed(2);
-    document.getElementById('start_coordinates_z').value = startSelectionCoords.z.toFixed(2);
+    document.getElementById('start_coordinates_x').value = startSelectionCoords.x;
+    document.getElementById('start_coordinates_z').value = startSelectionCoords.z;
 });
 
 // Mouse-Event für das Ziehen und Anpassen der Auswahlbox (nur während der Maustaste gedrückt ist)
@@ -324,10 +327,10 @@ document.getElementById('viewer-container').addEventListener('pointermove', func
 
     // Aktualisiere die angezeigten Koordinaten
     document.getElementById('end-coordinates').textContent = `X: ${selectionBox.max.x.toFixed(2)}, Z: ${selectionBox.max.z.toFixed(2)}`;
-    document.getElementById('start_coordinates_x').value = startSelectionCoords.x.toFixed(2);
-    document.getElementById('start_coordinates_z').value = startSelectionCoords.z.toFixed(2);
-    document.getElementById('end_coordinates_x').value = endSelectionCoords.x.toFixed(2);
-    document.getElementById('end_coordinates_z').value = endSelectionCoords.z.toFixed(2);
+    document.getElementById('start_coordinates_x').value = startSelectionCoords.x;
+    document.getElementById('start_coordinates_z').value = startSelectionCoords.z;
+    document.getElementById('end_coordinates_x').value = endSelectionCoords.x;
+    document.getElementById('end_coordinates_z').value = endSelectionCoords.z;
 });
 
 function calculateScale() {
@@ -356,6 +359,48 @@ function calculateScale() {
     // Sie können hier den Skalierungsfaktor verwenden, um das Modell zu skalieren
     // Beispiel: mesh.scale.set(scaleFactor, scaleFactor, scaleFactor);
 }
+function calculateMinMaxY() {
+    if (!mesh) {
+        console.error('Mesh is not loaded yet!');
+        return;
+    }
+
+    // Überprüfe, ob die Geometrie des Modells vorhanden ist
+    if (!mesh.geometry || !mesh.geometry.attributes.position) {
+        console.error('Mesh geometry or position attribute is undefined!');
+        return;
+    }
+
+    // Hole die Position der Vertices
+    const positions = mesh.geometry.attributes.position.array;
+
+    let minY = Infinity;
+    let maxY = -Infinity;
+
+    // Durchlaufe alle Vertices und bestimme min/max Y-Werte
+    for (let i = 0; i < positions.length; i += 3) { // 3 für x, y, z
+        const x = positions[i];
+        const y = positions[i + 1];
+        const z = positions[i + 2];
+
+        // Überprüfe, ob der Punkt innerhalb der Auswahlbox liegt (nur x und z Koordinaten)
+        if (x >= selectionBox.min.x && x <= selectionBox.max.x &&
+            z >= selectionBox.min.z && z <= selectionBox.max.z) {
+            // Aktualisiere min/max Y-Werte
+            minY = Math.min(minY, y);
+            maxY = Math.max(maxY, y);
+        }
+    }
+
+    // Überprüfe, ob minY und maxY aktualisiert wurden
+    if (minY === Infinity || maxY === -Infinity) {
+        console.log('No vertices found within the selection box');
+    } else {
+        console.log("minY:", minY, "maxY:", maxY);
+        document.getElementById('minY').value = minY;
+        document.getElementById('maxY').value = maxY;
+    }
+}
 
 // Mouse-Event für das Beenden der Auswahl (pointerup)
 document.getElementById('viewer-container').addEventListener('pointerup', function (e) {
@@ -369,11 +414,12 @@ document.getElementById('viewer-container').addEventListener('pointerup', functi
     // Aktualisiere die Linien der Auswahl
     updateSelectionLine();
     calculateScale();
-    document.getElementById('start_coordinates_x').value = startSelectionCoords.x.toFixed(2);
-    document.getElementById('start_coordinates_z').value = startSelectionCoords.z.toFixed(2);
-    document.getElementById('end_coordinates_x').value = endSelectionCoords.x.toFixed(2);
-    document.getElementById('end_coordinates_z').value = endSelectionCoords.z.toFixed(2);
-
+    document.getElementById('start_coordinates_x').value = startSelectionCoords.x;
+    document.getElementById('start_coordinates_z').value = startSelectionCoords.z;
+    document.getElementById('end_coordinates_x').value = endSelectionCoords.x;
+    document.getElementById('end_coordinates_z').value = endSelectionCoords.z;
+    calculateMinMaxY();
+    
     console.log("Auswahl abgeschlossen!");
     
 });

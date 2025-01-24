@@ -12,3 +12,5 @@ env/
 
 # Local environment variables
 .env
+.codegpt
+restauoroFront/media

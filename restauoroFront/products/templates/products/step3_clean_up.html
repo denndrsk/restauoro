@@ -30,7 +30,7 @@
         <form method="POST" action="{% url 'step2_viewer' project_id=project_id %}">
             {% csrf_token %}
             
-            <button type="submit" class="red-button">Clean up unsuccessful</button>
+            <button type="submit" class="red-button">return</button>
         </form>
 
         <!-- Nächster Schritt Button (Modell bereinigt) -->
@@ -38,7 +38,7 @@
             {% csrf_token %}
             <input type="hidden" name="scale_factor" value="{{ scale_factor }}">
             <input type="hidden" name="hidden_door_thickness" value="{{ hidden_door_thickness }}">
-            <button type="submit" class="yellow-button">Generate a filling piece</button>
+            <button type="submit" class="yellow-button">generate</button>
         </form>
     </div>
 

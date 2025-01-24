@@ -24,7 +24,7 @@
         <div class="button-container">
             <form method="POST" action="{% url 'step1_upload' %}">
                 {% csrf_token %}
-                <button type="submit" class="red-button">Model faulty</button>
+                <button type="submit" class="red-button">model faulty</button>
             </form>
         </div>
 
@@ -38,7 +38,7 @@
         <div class="button-container">
             <form method="POST" action="{% url 'step2_5_selection' project_id=project_id %}">
                 {% csrf_token %}
-                <button type="submit" class="yellow-button">Select damaged area</button>
+                <button type="submit" class="yellow-button">select damaged area</button>
             </form>
         </div>
     </div>
