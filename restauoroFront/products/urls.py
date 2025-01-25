@@ -9,5 +9,5 @@ urlpatterns = [
     path('step_2_5_selection/<str:project_id>/', views.step2_5_selection, name='step2_5_selection'),
     path('step3/<str:project_id>/', views.step3_clean_up, name='step3_clean_up'),
     path('step4/<str:project_id>/', views.step4_filling_piece, name='step4_filling_piece'),
-    path('step5/<str:project_id>/', views.step5_filling_peace_viewer, name=' step5_filling_peace_viewer'),
+    path('step5/<str:project_id>/', views.step5_filling_peace_viewer, name='step5_filling_peace_viewer'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

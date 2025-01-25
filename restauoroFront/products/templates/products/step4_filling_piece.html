@@ -23,7 +23,9 @@
         <!-- Modell fehlerhaft Button -->
         <div class="button-container">
             <form method="POST" action="{% url 'step2_5_selection' project_id=project_id %}">
+            <form method="POST" action="{% url 'step2_5_selection' project_id=project_id %}">
                 {% csrf_token %}
+                <button type="submit" class="red-button">return</button>
                 <button type="submit" class="red-button">return</button>
             </form>
         </div>
@@ -37,8 +39,8 @@
         <!-- Modell bereinigen Button -->
         <div class="button-container">
             <form method="POST" action="{% url 'step5_filling_peace_viewer' project_id=project_id %}">
-                {% csrf_token %}
-                <button type="submit" class="yellow-button">review filling peace</button>
+            {% csrf_token %}
+                <button type="submit" class="yellow-button">preview filling peace</button>
             </form>
         </div>
     </div>
@@ -79,6 +81,7 @@
                 metalness: 0.1,
                 transparent: true, 
                 opacity: 0.75  // 22% Transparenz
+               
             });
             var mesh = new THREE.Mesh(geometry, material);
             scene.add(mesh);
