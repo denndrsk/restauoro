@@ -9,6 +9,8 @@ from modelling_modules.align_model import align_model
 from modelling_modules.scale_model import scale_model
 from modelling_modules.create_filling_piece import create_filling_piece
 import subprocess
+from django.template.loader import render_to_string
+
 
 
 
@@ -178,7 +180,8 @@ def step3_clean_up(request, project_id):
 
     # Überprüfen, ob das bereinigte Modell wasserdicht ist
     is_watertight = result.get("is_watertight", False)
-
+    
+    
     # Übergabe an das Template
     return render(request, 'products/step3_clean_up.html', {
         'model_url': processed_model_url,

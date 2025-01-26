@@ -7,19 +7,32 @@
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
     {% load static %}
     <link rel="stylesheet" type="text/css" href="{% static 'css/styles_viewer.css' %}?v={{ now|date:'U' }}"> 
-
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
+     <!-- Loader Container -->
+<div id="loader-message" class="loader-hidden">
+    <div id="loading-message" class="loading-message">cleaning up...</div>
+</div>
+<div id="loader-container" class="loader-hidden">
+    <div class="loader"></div>
+</div>
+
     <!-- Überschrift über dem Viewer -->
-    <div id="header-message" style="font-weight: bold; font-size: 24px; text-align: center; margin-bottom: 20px;">
-        Press and hold to select the damaged area.
+    <div id="header-message" class="header-message">
+        Click and drag to select the damaged area.<br>
+        Override the door thickness if necessary.
     </div>
-    <div id="header-message" style="font-weight: bold; font-size: 24px; text-align: center; margin-bottom: 20px;">
-        Override the door thickness if neccesary.
-    </div>
+    
 
     <!-- Container für den STL-Viewer -->
-    <div id="viewer-container"></div>
+    <div id="viewer-container">
+        <div class="toggle-button-container">
+            <button id="mode-toggle-button" class="toggle-button">
+                <i class="fa-solid fa-up-down-left-right"></i>
+            </button>
+        </div>
+    </div>
 
     <!-- Buttons und Eingabefeld unter dem Viewer -->
     <div id="buttons-container">
@@ -27,31 +40,17 @@
         <div class="buttons-container">
             <form method="POST" action="{% url 'step2_viewer' project_id=project_id %}">
                 {% csrf_token %}
-                <button type="submit" class="red-button">return</button>
+                <button type="submit" class="red-button"><i class="fa-solid fa-rotate-right fa-sm"></i>return</button>
             </form>
         </div>
         
-        <div class="buttons-container">
-            <button id="mode-toggle-button" class="yellow-button">switch to selection</button>          
-        </div>
         
         
-        <!-- Türdicke Eingabefeld -->
-        <form method="POST" action="{% url 'step3_clean_up' project_id=project_id %}">
-            {% csrf_token %}
-            <div class="input-container">
-                <label for="door_thickness" style="color: #FFD61C; font-weight: bold;">Door Thickness in cm</label>
-                <input type="number" id="door_thickness" name="door_thickness" step="0.01" min="0" required value="{{ door_thickness }}">
-            </div>
-            <div class="input-container">
-                <label for="scale_dimension" style="color: #FFD61C; font-weight: bold;">Horizontal Dimension in cm</label>
-                <input type="number" id="scale_dimension" name="scale_dimension" step="0.01" min="0" required value="{{ scale_dimension }}">
-            </div>
-        </form>
-
+        
+       
         <!-- Modell bereinigen Button -->
         <div class="buttons-container">
-            <form method="POST" action="{% url 'step3_clean_up' project_id=project_id %}">
+            <form id="cleanupForm" method="POST" action="{% url 'step3_clean_up' project_id=project_id %}">
                 {% csrf_token %}
                 <input type="hidden" id="hidden_door_thickness" name="door_thickness" value="">
                 <input type="hidden" id="scale_factor" name="scale_factor" required value="">
@@ -62,15 +61,30 @@
                 <input type="hidden" id="minY" name="minY" value="">
                 <input type="hidden" id="maxY" name="maxY" value="">
                 <input type="hidden" id="offset-y" name="offset-y" value="">
-                <button type="submit" class="yellow-button">extrude & clean up</button>
+                <button type="submit" id="submitButton" class="yellow-button"><i class="fa-solid fa-check"></i>clean up</button>
             </form>
         </div>
     </div>
+    <div class = inputs-container>
+     <!-- Türdicke Eingabefeld -->
+     <form method="POST" action="{% url 'step3_clean_up' project_id=project_id %}">
+        {% csrf_token %}
+        <div class="input-container">
+            <label for="door_thickness">Door Thickness in cm</label>
+            <input type="number" id="door_thickness" name="door_thickness" step="0.01" min="0" required value="{{ door_thickness }}">
+        </div>
+        <div class="input-container">
+            <label for="scale_dimension">Horizontal Dimension in cm</label>
+            <input type="number" id="scale_dimension" name="scale_dimension" step="0.01" min="0" required value="{{ scale_dimension }}">
+        </div>
+    </form>
+    </div>
+   <!--
     <div id="coordinates-container">
         <p>Start Koordinaten: <span id="start-coordinates">X: 0, Z: 0</span></p>
         <p>End Koordinaten: <span id="end-coordinates">X: 0, Z: 0</span></p>
     </div>
-
+    -->
     <!-- Three.js und STLLoader einbinden -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three/examples/js/loaders/STLLoader.js"></script>
@@ -157,27 +171,31 @@ loader.load(modelUrl, function (geometry) {
 
 
 
-// Boden hinzufügen mit 22% Transparenz
-var planeGeometry = new THREE.PlaneGeometry(50, 50); // Größe des Bodens
-var planeMaterial = new THREE.MeshStandardMaterial({ 
-    color: 0x808080, 
-    roughness: 0.8,
-    transparent: true, 
-    opacity: 0.1  // 22% Transparenz
-});
-var plane = new THREE.Mesh(planeGeometry, planeMaterial);
-plane.position.z = -0.1; // Leicht unterhalb des Modells in der z-Achse
-scene.add(plane);
+
 
 // Gitter für die Ansicht hinzufügen
 var gridHelper = new THREE.GridHelper(50, 50); // Größe und Anzahl der Linien
 gridHelper.rotation.x = Math.PI / 2; // Drehe das Gitter in die x/y-Ebene
 scene.add(gridHelper);
 
-// Achsen-Helper hinzufügen und leicht nach oben verschieben, um Überlappung zu vermeiden
-var axesHelper = new THREE.AxesHelper(0.1); // Größe der Achsen (z.B. 5 Einheiten)
-axesHelper.position.z = 0.001; // Verschiebe die Achsen leicht nach oben
-scene.add(axesHelper);
+// Erstelle den AxesHelper mit der gewünschten Größe
+var helper = new THREE.AxesHelper(0.1); // 5 Einheiten groß
+
+// Erstelle ein Material, das Farbänderungen unterstützt
+var material = new THREE.LineBasicMaterial({ vertexColors: THREE.VertexColors });
+
+// Setze das Material für den AxesHelper
+helper.material = material;
+
+// Zugriff auf das Farben-Attribut der Geometrie
+var colors = helper.geometry.attributes.color;
+const colorX = new THREE.Color(0xFF6E61);
+const colorY = new THREE.Color(0x6255A3);
+const colorZ = new THREE.Color(0xFFD61C);
+helper.setColors(colorX, colorY, colorZ);
+// Achsen-Helper zur Szene hinzufügen
+scene.add(helper);
+helper.position.z = 0.001;
 
 // Lichter für die Szene hinzufügen
 var ambientLight = new THREE.AmbientLight(0x404040, 0.5);  // Dunkleres Umgebungslicht
@@ -240,6 +258,7 @@ var startSelectionCoords = { x: 0, z: 0 };
 // Linienmaterial für die Auswahlbox
 var selectionLineMaterial = new THREE.LineBasicMaterial({
     color: 0xFF6E61,  // Rote Farbe
+    transparent: false,
     linewidth: 10
 });
 
@@ -254,9 +273,9 @@ scene.add(selectionLine);
 document.getElementById('mode-toggle-button').addEventListener('click', function() {
     isSelectionMode = !isSelectionMode;
     if (isSelectionMode) {
-        document.getElementById('mode-toggle-button').textContent = 'Switch to Move';
+        document.getElementById('mode-toggle-button').innerHTML = '<i class="fa-solid fa-pen"></i>';
     } else {
-        document.getElementById('mode-toggle-button').textContent = 'Switch to Selection';
+        document.getElementById('mode-toggle-button').innerHTML = '<i class="fa-solid fa-up-down-left-right"></i>';
     }
 });
 
@@ -298,7 +317,7 @@ document.getElementById('viewer-container').addEventListener('pointerdown', func
     startSelectionCoords.z = selectionBox.min.z;
     // Update der Linien mit den Ecken der Auswahl
     updateSelectionLine();
-    document.getElementById('start-coordinates').textContent = `X: ${selectionBox.min.x.toFixed(2)}, Z: ${selectionBox.min.z.toFixed(2)}`;
+    //document.getElementById('start-coordinates').textContent = `X: ${selectionBox.min.x.toFixed(2)}, Z: ${selectionBox.min.z.toFixed(2)}`;
     document.getElementById('start_coordinates_x').value = startSelectionCoords.x;
     document.getElementById('start_coordinates_z').value = startSelectionCoords.z;
 });
@@ -326,7 +345,7 @@ document.getElementById('viewer-container').addEventListener('pointermove', func
     endSelectionCoords.z = selectionBox.max.z;
 
     // Aktualisiere die angezeigten Koordinaten
-    document.getElementById('end-coordinates').textContent = `X: ${selectionBox.max.x.toFixed(2)}, Z: ${selectionBox.max.z.toFixed(2)}`;
+    //document.getElementById('end-coordinates').textContent = `X: ${selectionBox.max.x.toFixed(2)}, Z: ${selectionBox.max.z.toFixed(2)}`;
     document.getElementById('start_coordinates_x').value = startSelectionCoords.x;
     document.getElementById('start_coordinates_z').value = startSelectionCoords.z;
     document.getElementById('end_coordinates_x').value = endSelectionCoords.x;
@@ -460,6 +479,23 @@ document.getElementById('door_thickness').addEventListener('input', function () 
     console.log('Door Thickness:', doorThickness)
 });
 
+
+document.getElementById('submitButton').addEventListener('click', function(event) {
+    console.log("submit");
+    
+    
+    // Zeige den Loader und die Überschrift an
+    document.getElementById('loader-container').classList.remove('loader-hidden');
+    document.getElementById('loader-message').classList.remove('loader-hidden');
+    
+    // Blende den Rest der Seite aus
+    document.getElementById('header-message').style.display = 'none';
+    document.getElementById('buttons-container').style.display = 'none';
+    document.getElementById('coordinates-container').style.display = 'none';
+    document.getElementById('viewer-container').style.display = 'none';
+
+    
+});
 
     </script>
 </body>

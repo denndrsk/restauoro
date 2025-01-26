@@ -7,38 +7,33 @@
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
     {% load static %}
     <link rel="stylesheet" type="text/css" href="{% static 'css/styles_viewer.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   </head>
 <body>
 
     <!-- Überschrift über dem Viewer -->
-    <div id="header-message" style="font-weight: bold; font-size: 24px; text-align: center; margin-bottom: 20px;">
+    <div id="header-message" class="header-message">
         Check the model
     </div>
 
     <!-- Container für den STL-Viewer -->
     <div id="viewer-container"></div>
 
-    <!-- Buttons und Eingabefeld unter dem Viewer -->
     <div id="buttons-container">
         <!-- Modell fehlerhaft Button -->
         <div class="button-container">
             <form method="POST" action="{% url 'step1_upload' %}">
                 {% csrf_token %}
-                <button type="submit" class="red-button">model faulty</button>
+                <button type="submit" class="red-button">
+                    <i class="fa-solid fa-rotate-right fa-sm"></i>return</button>
             </form>
         </div>
-
-        <!-- Türdicke Eingabefeld -->
-        <!--<div class="input-container">
-            <label for="door-thickness" style="color: #FFD61C; font-weight: bold;">Door thickness:</label>
-            <input type="number" id="door-thickness" name="door_thickness" step="0.01" min="0" placeholder="" required>
-        </div>-->
-
+    
         <!-- Modell bereinigen Button -->
         <div class="button-container">
             <form method="POST" action="{% url 'step2_5_selection' project_id=project_id %}">
                 {% csrf_token %}
-                <button type="submit" class="yellow-button">select damaged area</button>
+                <button type="submit" class="yellow-button"><i class="fa-solid fa-check"></i>confirm</button>
             </form>
         </div>
     </div>
@@ -72,28 +67,33 @@
             mesh.scale.set(1, 1, 1); // Skalierung des Modells
         });
 
-        // Boden hinzufügen mit 22% Transparenz
-        var planeGeometry = new THREE.PlaneGeometry(50, 50); // Größe des Bodens
-        var planeMaterial = new THREE.MeshStandardMaterial({ 
-            color: 0x808080, 
-            roughness: 0.8,
-            transparent: true, 
-            opacity: 0.1  // 22% Transparenz
-        });
-        var plane = new THREE.Mesh(planeGeometry, planeMaterial);
-        plane.position.z = -0.1; // Leicht unterhalb des Modells in der z-Achse
-        scene.add(plane);
-
+        
         // Gitter für die Ansicht hinzufügen
         var gridHelper = new THREE.GridHelper(50, 50); // Größe und Anzahl der Linien
         gridHelper.rotation.x = Math.PI / 2; // Drehe das Gitter in die x/y-Ebene
         scene.add(gridHelper);
 
         // Achsen-Helper hinzufügen und leicht nach oben verschieben, um Überlappung zu vermeiden
-        var axesHelper = new THREE.AxesHelper(0.1); // Größe der Achsen (z.B. 5 Einheiten)
-        axesHelper.position.z = 0.001; // Verschiebe die Achsen leicht nach oben
-        scene.add(axesHelper);
+        // Erstelle den AxesHelper mit der gewünschten Größe
+        var helper = new THREE.AxesHelper(0.1); // 5 Einheiten groß
 
+        // Erstelle ein Material, das Farbänderungen unterstützt
+        var material = new THREE.LineBasicMaterial({ vertexColors: THREE.VertexColors });
+
+        // Setze das Material für den AxesHelper
+        helper.material = material;
+
+        // Zugriff auf das Farben-Attribut der Geometrie
+        var colors = helper.geometry.attributes.color;
+        const colorX = new THREE.Color(0xFF6E61);
+        const colorY = new THREE.Color(0x6255A3);
+        const colorZ = new THREE.Color(0xFFD61C);
+        helper.setColors(colorX, colorY, colorZ);
+        // Achsen-Helper zur Szene hinzufügen
+        scene.add(helper);
+        helper.position.z = 0.001;
+        
+        
         // Lichter für die Szene hinzufügen
         var ambientLight = new THREE.AmbientLight(0x404040, 0.5);  // Dunkleres Umgebungslicht
         scene.add(ambientLight);
