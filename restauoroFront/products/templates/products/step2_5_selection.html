@@ -93,14 +93,15 @@
     <script>
 var modelDepth = 0; // Declare modelHeight globally
 var modelFront = 0; // Declare modelHeight globally
+var selectionY = -0.01;
 var doorThickness = modelDepth; // Setze den Standardwert auf die Modell-Tiefe
 var scene = new THREE.Scene();  // Definiere die Szene hier
 // Orthogonalprojektion Kamera initialisieren
 var camera = new THREE.OrthographicCamera(
-    -50 * (width / height),  // linke Grenze angepasst an das Seitenverhältnis
-    50 * (width / height),   // rechte Grenze angepasst an das Seitenverhältnis
-    50,                      // obere Grenze
-    -50,                     // untere Grenze
+    -3 * (width / height),  // linke Grenze angepasst an das Seitenverhältnis
+   3 * (width / height),   // rechte Grenze angepasst an das Seitenverhältnis
+    3,                      // obere Grenze
+    -3,                     // untere Grenze
     0.1,                     // Nahbereich
     1000                     // Fernbereich
 );
@@ -119,8 +120,8 @@ renderer.setSize(width, height);
 
 // Füge den Renderer zum DOM hinzu (optional)
 document.body.appendChild(renderer.domElement);
-camera.left = -50 * (width / height);
-camera.right = 50 * (width / height);
+camera.left = -3 * (width / height);
+camera.right = 3 * (width / height);
 camera.updateProjectionMatrix();
 
 document.getElementById('viewer-container').appendChild(renderer.domElement);
@@ -241,13 +242,7 @@ controls.panSpeed = 1.2;
 // Maussteuerung aktivieren
 controls.enableRotate = true;
 
-// Render-Schleife
-function animate() {
-    requestAnimationFrame(animate);
-    controls.update();  // Aktualisiere die Steuerung
-    renderer.render(scene, camera);  // Render die Szene
-}
-animate();
+
 
 // Auswahlmodus aktivieren/deaktivieren
 var isSelectionMode = false;
@@ -269,7 +264,24 @@ selectionGeometry.setAttribute('position', new THREE.BufferAttribute(selectionVe
 
 var selectionLine = new THREE.LineSegments(selectionGeometry, selectionLineMaterial);
 scene.add(selectionLine);
+// Funktion zum Aktualisieren der Y-Position der Auswahllinie
+function updateSelectionLineYPosition() {
+    // Berechne den Zoomfaktor
+    const zoomFactor = camera.zoom;
 
+    // Setze die Y-Position der Auswahllinie, abhängig vom Zoomfaktor
+    // Du kannst hier einen Multiplikator hinzufügen, um den Abstand basierend auf dem Zoom anzupassen
+    selectionY = -0.01// camera.position.y + (0.1 / zoomFactor);  // Kleine Verschiebung vor der Kamera, skaliert durch den Zoomfaktor
+    
+    // Aktualisiere die Y-Position der Auswahlbox
+    var positions = selectionLine.geometry.attributes.position.array;
+    for (let i = 1; i < positions.length; i += 3) {
+        positions[i] = selectionY; // Setze die Y-Koordinate auf den neuen Wert
+    }
+    
+    // Benachrichtige THREE.js, dass die Geometrie aktualisiert wurde
+    selectionLine.geometry.attributes.position.needsUpdate = true;
+}
 document.getElementById('mode-toggle-button').addEventListener('click', function() {
     isSelectionMode = !isSelectionMode;
     if (isSelectionMode) {
@@ -296,11 +308,11 @@ document.getElementById('viewer-container').addEventListener('pointerdown', func
     const mouseZ = -((e.clientY - rect.top) / rect.height) * 2 + 1;
     
     // Umrechnung in Weltkoordinaten unter Berücksichtigung von Kamera- und Zoom-Effekten
-    const worldX = (mouseX * (50 * width / height)) / camera.zoom + camera.position.x;
-    const worldZ = (mouseZ * 50) / camera.zoom + camera.position.z;
+    const worldX = (mouseX * (3 * width / height)) / camera.zoom + camera.position.x;
+    const worldZ = (mouseZ * 3) / camera.zoom + camera.position.z;
 
     // Definiere den festen Punkt für den Ray (z.B. auf der Y=50 Ebene)
-    var fixedRayOrigin = new THREE.Vector3(worldX, -50, worldZ); 
+    var fixedRayOrigin = new THREE.Vector3(worldX, -3, worldZ); 
 
     // Setze die Richtung des Rays (orthogonal zur XY-Ebene)
     var rayDirection = new THREE.Vector3(worldX, 1, worldZ); 
@@ -335,8 +347,8 @@ document.getElementById('viewer-container').addEventListener('pointermove', func
     const mouseZ = -((e.clientY - rect.top) / rect.height) * 2 + 1;
     
     // Umrechnung in Weltkoordinaten
-    const worldX = (mouseX * (50 * width / height)) / camera.zoom + camera.position.x;
-    const worldZ = (mouseZ * 50) / camera.zoom + camera.position.z;
+    const worldX = (mouseX * (3 * width / height)) / camera.zoom + camera.position.x;
+    const worldZ = (mouseZ * 3) / camera.zoom + camera.position.z;
 
     // Setze den Endpunkt der Auswahlbox
     selectionBox.max.set(worldX, -0.01, worldZ);
@@ -443,24 +455,27 @@ document.getElementById('viewer-container').addEventListener('pointerup', functi
     
 });
 
-
-
+window.addEventListener('wheel', function(event) {
+    
+    console.log("Camera-Y-position:", camera.position);
+    console.log("Camera Zoom:", camera.zoom);
+});
 
 // Funktion zum Aktualisieren der Linien
 function updateSelectionLine() {
+    
     var positions = selectionLine.geometry.attributes.position.array;
     var min = selectionBox.min;
     var max = selectionBox.max;
-
     // Update der Eckpunkte der Auswahlbox
-    positions[0] = min.x; positions[1] = min.y; positions[2] = min.z;
-    positions[3] = max.x; positions[4] = min.y; positions[5] = min.z;
-    positions[6] = max.x; positions[7] = min.y; positions[8] = min.z;
-    positions[9] = max.x; positions[10] = min.y; positions[11] = max.z;
-    positions[12] = max.x; positions[13] = min.y; positions[14] = max.z;
-    positions[15] = min.x; positions[16] = min.y; positions[17] = max.z;
-    positions[18] = min.x; positions[19] = min.y; positions[20] = max.z;
-    positions[21] = min.x; positions[22] = min.y; positions[23] = min.z;
+    positions[0] = min.x; positions[1] = selectionY; positions[2] = min.z;
+    positions[3] = max.x; positions[4] = selectionY; positions[5] = min.z;
+    positions[6] = max.x; positions[7] = selectionY; positions[8] = min.z;
+    positions[9] = max.x; positions[10] = selectionY; positions[11] = max.z;
+    positions[12] = max.x; positions[13] = selectionY; positions[14] = max.z;
+    positions[15] = min.x; positions[16] = selectionY; positions[17] = max.z;
+    positions[18] = min.x; positions[19] = selectionY; positions[20] = max.z;
+    positions[21] = min.x; positions[22] = selectionY; positions[23] = min.z;
 
     selectionLine.geometry.attributes.position.needsUpdate = true;
 }
@@ -496,6 +511,14 @@ document.getElementById('submitButton').addEventListener('click', function(event
 
     
 });
+// Render-Schleife
+function animate() {
+    updateSelectionLineYPosition()
+    requestAnimationFrame(animate);
+    controls.update();  // Aktualisiere die Steuerung
+    renderer.render(scene, camera);  // Render die Szene
+}
+animate();
 
     </script>
 </body>
