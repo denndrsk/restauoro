@@ -67,9 +67,9 @@
             var material = new THREE.MeshStandardMaterial({ 
                 color: 0xE6BF18,  // Dunkleres Grau
                 roughness: 0.5, 
-                metalness: 0.1,
-                transparent: true, 
-                opacity: 0.75  // 22% Transparenz
+                metalness: 0.4,
+                transparent: false 
+                
             });
             var mesh = new THREE.Mesh(geometry, material);
             scene.add(mesh);

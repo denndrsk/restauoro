@@ -10,7 +10,7 @@ from modelling_modules.scale_model import scale_model
 from modelling_modules.create_filling_piece import create_filling_piece
 import subprocess
 from django.template.loader import render_to_string
-
+import trimesh
 
 
 
@@ -18,7 +18,14 @@ from django.template.loader import render_to_string
 def step1_upload(request):
     if request.method == 'POST' and request.FILES.get('model_file'):
         model_file = request.FILES['model_file']
-        
+        original_extension = os.path.splitext(model_file.name)[1].lower()
+
+        # Überprüfen, ob die Datei eine unterstützte Erweiterung hat
+        if original_extension not in ['.stl', '.obj']:
+            return render(request, 'products/step1_upload.html', {
+                'error_message': 'Nur STL- oder OBJ-Dateien sind erlaubt.'
+            })
+
         # Ermitteln der nächsten Projekt-ID
         project_folder_base = settings.MEDIA_ROOT
         project_folders = [f for f in os.listdir(project_folder_base) if f.startswith('project_')]
@@ -28,13 +35,22 @@ def step1_upload(request):
         project_folder = os.path.join(settings.MEDIA_ROOT, f'project_{next_project_id}')
         os.makedirs(project_folder, exist_ok=True)
 
-        # Speichern der Datei
+        # Dateiname und Pfad festlegen
         new_filename = f'raw_model_{next_project_id}.stl'
         file_path = os.path.join(project_folder, new_filename)
-        fs = FileSystemStorage(location=project_folder)
-        fs.save(new_filename, model_file)
-        
-        
+
+        # Wenn die Datei im OBJ-Format ist, konvertiere sie
+        if original_extension == '.obj':
+            # Lade die OBJ-Datei in Trimesh
+            mesh = trimesh.load_mesh(model_file, file_type='obj')
+
+            # Speichere die konvertierte Datei als STL
+            mesh.export(file_path, file_type='stl')
+        else:
+            # Speichern der STL-Datei direkt
+            fs = FileSystemStorage(location=project_folder)
+            fs.save(new_filename, model_file)
+
         # Session speichern
         request.session['project_id'] = next_project_id
         align_model(next_project_id)
