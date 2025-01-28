@@ -101,8 +101,8 @@ var camera = new THREE.OrthographicCamera(
    3 * (width / height),   // rechte Grenze angepasst an das Seitenverhältnis
     3,                      // obere Grenze
     -3,                     // untere Grenze
-    0.1,                     // Nahbereich
-    1000                     // Fernbereich
+    0.0000000001,                     // near clip
+    1000                     // far clip
 );
 // Initialisiere den Renderer zuerst
 var renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -124,7 +124,7 @@ camera.right = 3 * (width / height);
 camera.updateProjectionMatrix();
 
 document.getElementById('viewer-container').appendChild(renderer.domElement);
-console.log("Renderer initialized");
+//console.log("Renderer initialized");
 // STLLoader und Modell-URL laden
 var loader = new THREE.STLLoader();
 var modelUrl = "{{ model_url }}";  // URL des bearbeiteten Modells
@@ -148,7 +148,7 @@ loader.load(modelUrl, function (geometry) {
     // Extrahiere die Höhe des Modells aus der Bounding Box (Y-Achse)
     modelFront = boundingBox.min.y;
     modelDepth = (boundingBox.max.y - boundingBox.min.y)* 100;
-    console.log("Model depth: ", modelDepth); // Ausgabe der Modellhöhe
+    //console.log("Model depth: ", modelDepth); // Ausgabe der Modellhöhe
 
     // Stelle sicher, dass das Eingabefeld mit der Tiefe des Modells vorab befüllt wird
  //   document.getElementById('door_thickness').value = modelDepth;
@@ -249,13 +249,16 @@ var selectionBox = new THREE.Box3();
 var endSelectionCoords = { x: 0, z: 0 };
 var startSelectionCoords = { x: 0, z: 0 };
 
-// Linienmaterial für die Auswahlbox
+// Erstelle eine Clipping-Ebene (z. B. entlang der Y-Achse)
+
+
+// Linienmaterial für die Auswahlbox mit Clipping
 var selectionLineMaterial = new THREE.LineBasicMaterial({
     color: 0xFF6E61,  // Rote Farbe
     transparent: false,
-    linewidth: 10
+    linewidth: 10,
+    
 });
-
 // Geometrie für die Auswahlbox
 var selectionGeometry = new THREE.BufferGeometry();
 var selectionVertices = new Float32Array(8 * 3);  // 8 Punkte für die Box (jeweils 3 Koordinaten x, y, z)
@@ -265,22 +268,18 @@ var selectionLine = new THREE.LineSegments(selectionGeometry, selectionLineMater
 scene.add(selectionLine);
 // Funktion zum Aktualisieren der Y-Position der Auswahllinie
 function updateSelectionLineYPosition() {
-    // Berechne den Zoomfaktor
     const zoomFactor = camera.zoom;
+    const offset = 0.1; // Abstand zur Kamera
+    selectionY = camera.position.y + offset / zoomFactor;
 
-    // Setze die Y-Position der Auswahllinie, abhängig vom Zoomfaktor
-    // Du kannst hier einen Multiplikator hinzufügen, um den Abstand basierend auf dem Zoom anzupassen
-    selectionY = -0.01// camera.position.y + (0.1 / zoomFactor);  // Kleine Verschiebung vor der Kamera, skaliert durch den Zoomfaktor
-    
-    // Aktualisiere die Y-Position der Auswahlbox
     var positions = selectionLine.geometry.attributes.position.array;
     for (let i = 1; i < positions.length; i += 3) {
-        positions[i] = selectionY; // Setze die Y-Koordinate auf den neuen Wert
+        positions[i] = selectionY; // Aktualisiere Y-Koordinate
     }
-    
-    // Benachrichtige THREE.js, dass die Geometrie aktualisiert wurde
     selectionLine.geometry.attributes.position.needsUpdate = true;
 }
+
+
 document.getElementById('mode-toggle-button').addEventListener('click', function() {
     isSelectionMode = !isSelectionMode;
     if (isSelectionMode) {
@@ -350,7 +349,7 @@ document.getElementById('viewer-container').addEventListener('pointermove', func
     const worldZ = (mouseZ * 3) / camera.zoom + camera.position.z;
 
     // Setze den Endpunkt der Auswahlbox
-    selectionBox.max.set(worldX, -0.01, worldZ);
+    selectionBox.max.set(worldX, selectionY, worldZ);
     updateSelectionLine();
     endSelectionCoords.x = selectionBox.max.x;
     endSelectionCoords.z = selectionBox.max.z;
@@ -403,7 +402,7 @@ function calculateMinMaxY() {
 
     // Hole die Position der Vertices
     const positions = mesh.geometry.attributes.position.array;
-
+    //console.log("Positions Array:", positions);
     let minY = Infinity;
     let maxY = -Infinity;
 
@@ -416,6 +415,7 @@ function calculateMinMaxY() {
         // Überprüfe, ob der Punkt innerhalb der Auswahlbox liegt (nur x und z Koordinaten)
         if (x >= selectionBox.min.x && x <= selectionBox.max.x &&
             z >= selectionBox.min.z && z <= selectionBox.max.z) {
+            //console.log(`Punkt (${x}, ${y}, ${z}) liegt in der Auswahlbox`);
             // Aktualisiere min/max Y-Werte
             minY = Math.min(minY, y);
             maxY = Math.max(maxY, y);
@@ -439,7 +439,7 @@ document.getElementById('viewer-container').addEventListener('pointerup', functi
     pointerdown = false; // Setze den Flag zurück, wenn die Maus losgelassen wird
 
     // Finalisiere die Auswahlbox, um die Endkoordinaten zu setzen
-    selectionBox.max.set(selectionBox.max.x, -0.01, selectionBox.max.z);
+    selectionBox.max.set(selectionBox.max.x, selectionY, selectionBox.max.z);
 
     // Aktualisiere die Linien der Auswahl
     updateSelectionLine();
@@ -456,8 +456,8 @@ document.getElementById('viewer-container').addEventListener('pointerup', functi
 
 window.addEventListener('wheel', function(event) {
     
-    console.log("Camera-Y-position:", camera.position);
-    console.log("Camera Zoom:", camera.zoom);
+    //console.log("Camera-Y-position:", camera.position);
+    //console.log("Camera Zoom:", camera.zoom);
 });
 
 // Funktion zum Aktualisieren der Linien
@@ -467,17 +467,26 @@ function updateSelectionLine() {
     var min = selectionBox.min;
     var max = selectionBox.max;
     // Update der Eckpunkte der Auswahlbox
-    positions[0] = min.x; positions[1] = selectionY; positions[2] = min.z;
-    positions[3] = max.x; positions[4] = selectionY; positions[5] = min.z;
-    positions[6] = max.x; positions[7] = selectionY; positions[8] = min.z;
-    positions[9] = max.x; positions[10] = selectionY; positions[11] = max.z;
-    positions[12] = max.x; positions[13] = selectionY; positions[14] = max.z;
-    positions[15] = min.x; positions[16] = selectionY; positions[17] = max.z;
-    positions[18] = min.x; positions[19] = selectionY; positions[20] = max.z;
-    positions[21] = min.x; positions[22] = selectionY; positions[23] = min.z;
+    const thickness = 0.2; // Dicke in Y-Richtung
+
+positions[0] = min.x; positions[1] = selectionY; positions[2] = min.z;
+positions[3] = max.x; positions[4] = selectionY; positions[5] = min.z;
+
+positions[6] = max.x; positions[7] = selectionY + thickness; positions[8] = min.z;
+positions[9] = max.x; positions[10] = selectionY + thickness; positions[11] = max.z;
+
+positions[12] = max.x; positions[13] = selectionY; positions[14] = max.z;
+positions[15] = min.x; positions[16] = selectionY; positions[17] = max.z;
+
+positions[18] = min.x; positions[19] = selectionY + thickness; positions[20] = max.z;
+positions[21] = min.x; positions[22] = selectionY + thickness; positions[23] = min.z;
 
     selectionLine.geometry.attributes.position.needsUpdate = true;
 }
+controls.addEventListener('change', function () {
+    updateSelectionLineYPosition(); // Aktualisiere die Y-Position der Linie
+    updateSelectionLine();          // Aktualisiere die Liniengeometrie
+});
 
 document.getElementById('scale_dimension').addEventListener('input', function () {
     const scaleDimension = parseFloat(this.value);
@@ -495,7 +504,7 @@ document.getElementById('door_thickness').addEventListener('input', function () 
 
 
 document.getElementById('submitButton').addEventListener('click', function(event) {
-    console.log("submit");
+    //console.log("submit");
     
     
     // Zeige den Loader und die Überschrift an

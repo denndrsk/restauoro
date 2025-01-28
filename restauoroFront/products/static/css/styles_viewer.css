@@ -58,7 +58,7 @@
 /* Zusätzliche Stile für die Nachricht */
 .loading-message {
     position: absolute; /* Absolute Positionierung über dem Spinner */
-    top: 40%; /* Position der Nachricht relativ zur Höhe */
+    top: 30%; /* Position der Nachricht relativ zur Höhe */
     left: 50%;
     transform: translateX(-50%); /* Zentriert die Nachricht horizontal */
     margin-bottom: 20px;
@@ -94,7 +94,7 @@ html, body {
 
 #viewer-container {
     position: relative;
-    border: 3px solid #0a0a0a;
+    border: 3px solid #1e1e1e;
     width: 80vw;
     height: 80vh;
     display: flex;
