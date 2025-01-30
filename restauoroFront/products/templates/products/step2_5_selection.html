@@ -129,9 +129,13 @@ document.getElementById('viewer-container').appendChild(renderer.domElement);
 var loader = new THREE.STLLoader();
 var modelUrl = "{{ model_url }}";  // URL des bearbeiteten Modells
 var mesh;
+var positions;
 // STLLoader und Modell-URL laden
 loader.load(modelUrl, function (geometry) {
     //console.log("STL Model loaded", geometry);  // Füge dies hinzu
+     positions= geometry.attributes.position.array;
+    console.log("First 3 vertices:", positions[0], positions[1], positions[2]);
+    console.log("Last 3 vertices:", positions[positions.length - 3], positions[positions.length - 2], positions[positions.length - 1]);
     var material = new THREE.MeshStandardMaterial({ 
         color: 0x8A8A8A, 
         roughness: 0.5, 
@@ -139,12 +143,12 @@ loader.load(modelUrl, function (geometry) {
     });
     mesh = new THREE.Mesh(geometry, material)
     scene.add(mesh);
-    mesh.position.set(0, 0, 0); 
-    mesh.scale.set(1, 1, 1); 
+    
 
     // Berechne die Bounding Box des Modells
     var boundingBox = new THREE.Box3().setFromObject(mesh);
-    
+    console.log("Bounding Box Min:", boundingBox.min);
+    console.log("Bounding Box Max:", boundingBox.max);
     // Extrahiere die Höhe des Modells aus der Bounding Box (Y-Achse)
     modelFront = boundingBox.min.y;
     modelDepth = (boundingBox.max.y - boundingBox.min.y)* 100;
@@ -272,9 +276,9 @@ function updateSelectionLineYPosition() {
     const offset = 0.1; // Abstand zur Kamera
     selectionY = camera.position.y + offset / zoomFactor;
 
-    var positions = selectionLine.geometry.attributes.position.array;
-    for (let i = 1; i < positions.length; i += 3) {
-        positions[i] = selectionY; // Aktualisiere Y-Koordinate
+    var linePositions = selectionLine.geometry.attributes.position.array;
+    for (let i = 1; i < linePositions.length; i += 3) {
+        linePositions[i] = selectionY; // Aktualisiere Y-Koordinate
     }
     selectionLine.geometry.attributes.position.needsUpdate = true;
 }
@@ -400,26 +404,23 @@ function calculateMinMaxY() {
         return;
     }
 
-    // Hole die Position der Vertices
-    const positions = mesh.geometry.attributes.position.array;
+    
     //console.log("Positions Array:", positions);
     let minY = Infinity;
     let maxY = -Infinity;
 
     // Durchlaufe alle Vertices und bestimme min/max Y-Werte
-    for (let i = 0; i < positions.length; i += 3) { // 3 für x, y, z
-        const x = positions[i];
-        const y = positions[i + 1];
-        const z = positions[i + 2];
+    for (let i = 0; i < positions.length; i += 3) {
+    const x = positions[i];
+    const y = positions[i + 1];
+    const z = positions[i + 2];
 
-        // Überprüfe, ob der Punkt innerhalb der Auswahlbox liegt (nur x und z Koordinaten)
-        if (x >= selectionBox.min.x && x <= selectionBox.max.x &&
-            z >= selectionBox.min.z && z <= selectionBox.max.z) {
-            //console.log(`Punkt (${x}, ${y}, ${z}) liegt in der Auswahlbox`);
-            // Aktualisiere min/max Y-Werte
-            minY = Math.min(minY, y);
-            maxY = Math.max(maxY, y);
-        }
+    if (x >= selectionBox.min.x && x <= selectionBox.max.x &&
+        z >= selectionBox.min.z && z <= selectionBox.max.z) {
+        //console.log(`Point (${x}, ${y}, ${z}) is within the selection box`);
+        minY = Math.min(minY, y);
+        maxY = Math.max(maxY, y);
+    }
     }
 
     // Überprüfe, ob minY und maxY aktualisiert wurden
@@ -463,23 +464,23 @@ window.addEventListener('wheel', function(event) {
 // Funktion zum Aktualisieren der Linien
 function updateSelectionLine() {
     
-    var positions = selectionLine.geometry.attributes.position.array;
+    var linePositions = selectionLine.geometry.attributes.position.array;
     var min = selectionBox.min;
     var max = selectionBox.max;
     // Update der Eckpunkte der Auswahlbox
     const thickness = 0.2; // Dicke in Y-Richtung
 
-positions[0] = min.x; positions[1] = selectionY; positions[2] = min.z;
-positions[3] = max.x; positions[4] = selectionY; positions[5] = min.z;
+    linePositions[0] = min.x; linePositions[1] = selectionY; linePositions[2] = min.z;
+    linePositions[3] = max.x; linePositions[4] = selectionY; linePositions[5] = min.z;
 
-positions[6] = max.x; positions[7] = selectionY + thickness; positions[8] = min.z;
-positions[9] = max.x; positions[10] = selectionY + thickness; positions[11] = max.z;
+    linePositions[6] = max.x; linePositions[7] = selectionY + thickness; linePositions[8] = min.z;
+    linePositions[9] = max.x; linePositions[10] = selectionY + thickness; linePositions[11] = max.z;
 
-positions[12] = max.x; positions[13] = selectionY; positions[14] = max.z;
-positions[15] = min.x; positions[16] = selectionY; positions[17] = max.z;
+    linePositions[12] = max.x; linePositions[13] = selectionY; linePositions[14] = max.z;
+    linePositions[15] = min.x; linePositions[16] = selectionY; linePositions[17] = max.z;
 
-positions[18] = min.x; positions[19] = selectionY + thickness; positions[20] = max.z;
-positions[21] = min.x; positions[22] = selectionY + thickness; positions[23] = min.z;
+    linePositions[18] = min.x; linePositions[19] = selectionY + thickness; linePositions[20] = max.z;
+    linePositions[21] = min.x; linePositions[22] = selectionY + thickness; linePositions[23] = min.z;
 
     selectionLine.geometry.attributes.position.needsUpdate = true;
 }

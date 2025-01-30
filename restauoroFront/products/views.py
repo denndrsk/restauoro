@@ -230,7 +230,7 @@ def step4_filling_piece(request, project_id):
 
 
     scale_factor = float(request.session.get('scale_factor'))
-    door_thickness = float(request.session.get('door_thickness', 0.1))
+    
     start_coordinates_x = float(request.session.get('start_coordinates_x', 0)) * scale_factor
     start_coordinates_z = float(request.session.get('start_coordinates_z', 0))* scale_factor
     end_coordinates_x = float(request.session.get('end_coordinates_x', 0)) * scale_factor
@@ -238,6 +238,7 @@ def step4_filling_piece(request, project_id):
     
     maxY = float(request.session.get('maxY', 0))*scale_factor
     minY = float(request.session.get('minY', 0))*scale_factor
+    door_thickness = maxY - minY
     print("scale by:    ", scale_factor)
     print("start coords*scaled", start_coordinates_x,start_coordinates_z)
     print("minY:", minY)
