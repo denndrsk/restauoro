@@ -144,9 +144,7 @@ def step3_clean_up(request, project_id):
     os.makedirs(processed_folder, exist_ok=True)
     scale_factor = float(request.POST.get('scale_factor', 1.0))
     print("hier ist",scale_factor)
-    door_thickness = float(request.POST.get('door_thickness', 0.1)) / 100 
-
-    print(door_thickness)
+    
 
     start_coordinates_x = request.POST.get('start_coordinates_x')
     start_coordinates_z = request.POST.get('start_coordinates_z')
@@ -156,6 +154,14 @@ def step3_clean_up(request, project_id):
     maxY = float(request.POST.get('maxY'))
 
     print(start_coordinates_x,start_coordinates_z,end_coordinates_x,end_coordinates_z)
+    
+    scaled_model_path = os.path.join(project_folder, f'raw_model_{project_id}_scaled.stl')
+    print(minY, maxY)
+    scale_model(raw_model_path,scale_factor, scaled_model_path)
+    door_thickness = (maxY-minY)/2*scale_factor#float(request.POST.get('door_thickness', 0.1)) / 100 
+
+    print(door_thickness)
+    # Blender-Skript-Pfad
     request.session['minY'] = minY
     request.session['maxY'] = maxY
     request.session['door_thickness'] = door_thickness
@@ -164,11 +170,6 @@ def step3_clean_up(request, project_id):
     request.session['start_coordinates_z'] = start_coordinates_z
     request.session['end_coordinates_x'] = end_coordinates_x
     request.session['end_coordinates_z'] = end_coordinates_z
-    scaled_model_path = os.path.join(project_folder, f'raw_model_{project_id}_scaled.stl')
-    print(minY, maxY)
-    scale_model(raw_model_path,scale_factor, scaled_model_path)
-
-    # Blender-Skript-Pfad
     blender_script = os.path.join(settings.BASE_DIR, 'restauoroFront/modelling_modules/solidify_model.py')
     
     
@@ -328,8 +329,8 @@ def step5_filling_peace_viewer(request, project_id):
     ]
 
     try:
-        subprocess.run(command, check=True)
-        threejs_filling_peace_url = f"{settings.MEDIA_URL}project_{project_id}/processed/extracted_filling_peace.stl"
+        #subprocess.run(command, check=True)
+        threejs_filling_peace_url = f"{settings.MEDIA_URL}project_{project_id}/processed/filling_peace.stl"
         return render(request, 'products/step5_filling_peace_viewer.html', {
             'project_id': project_id,
             'filling_peace_url': threejs_filling_peace_url

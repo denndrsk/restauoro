@@ -32,7 +32,16 @@ def create_filling_piece(clean_model_output_path, filling_Piece_model_output_pat
     shift_y = filling_position[1]  # Y-Position (unverändert)
     shift_z = filling_position[2]  # Z-Position (unverändert)
     filling.apply_translation([shift_x, shift_y, shift_z])
-    
+    # **Neue Funktion: Mesh unterteilen**
+    def subdivide_mesh(mesh, iterations=3):
+        """ Unterteilt das Mesh in kleinere Dreiecke für mehr Details """
+        for _ in range(iterations):  
+            vertices, faces = trimesh.remesh.subdivide(mesh.vertices, mesh.faces)
+            mesh = trimesh.Trimesh(vertices=vertices, faces=faces)  # Neues Mesh erstellen
+        return mesh
+
+    # Wende die Unterteilung an
+    filling = subdivide_mesh(filling, iterations=3)
     # Berechne die Differenz zwischen Füllstück und Türmodell
     filling_piece = trimesh.boolean.difference([filling, door_mesh], engine='blender')
 
