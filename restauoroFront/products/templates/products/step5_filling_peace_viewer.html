@@ -13,7 +13,7 @@
 
     <!-- Überschrift über dem Viewer -->
     <div id="header-message" style="font-weight: bold; font-size: 24px; text-align: center; margin-bottom: 20px;">
-        Check the filling peace
+        Is the piece generated accurately?
     </div>
 
     <!-- Container für den STL-Viewer -->
@@ -39,7 +39,7 @@
         <div class="button-container">
             <form method="POST" action="{% url 'step2_viewer' project_id=project_id %}">
                 {% csrf_token %}
-                <button type="submit" class="yellow-button"><i class="fa-solid fa-check"></i>proceed</button>
+                <button type="submit" class="yellow-button"><i class="fa-solid fa-check"></i>confirm</button>
             </form>
         </div>
     </div>
@@ -68,7 +68,8 @@
                 color: 0xE6BF18,  // Dunkleres Grau
                 roughness: 0.5, 
                 metalness: 0.4,
-                transparent: false 
+                transparent: true,
+                opacity : 0.75 
                 
             });
             var mesh = new THREE.Mesh(geometry, material);

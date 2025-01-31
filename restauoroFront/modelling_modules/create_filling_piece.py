@@ -8,7 +8,7 @@ def create_filling_piece(clean_model_output_path, filling_Piece_model_output_pat
     
     # Toleranzen für das Füllstück
     model_tolerance_X = 0  # Keine Toleranz in X-Richtung
-    model_tolerance_Y = 0  # Reduziere die Dicke des Füllstücks in Y-Richtung
+    model_tolerance_Y = -0.02  # Reduziere die Dicke des Füllstücks in Y-Richtung
     model_tolerance_Z = 0  # Keine Toleranz in Z-Richtung
 
     # Erstelle das Quader-Füllstück mit Toleranzen
@@ -22,9 +22,9 @@ def create_filling_piece(clean_model_output_path, filling_Piece_model_output_pat
     # Verschiebe das Füllstück, sodass die untere linke Ecke bei (0, 0, 0) liegt
     # Die untere linke Ecke eines standardmäßig erstellten Quaders liegt bei (-width/2, -height/2, -depth/2)
     # Daher müssen wir das Füllstück um (width/2, height/2, depth/2) verschieben, um die Ecke nach (0, 0, 0) zu bringen
-    initial_shift_x = (filling_dimensions[0] + model_tolerance_X) / 2
-    initial_shift_y = (filling_dimensions[1] - model_tolerance_Y) / 2 
-    initial_shift_z = (filling_dimensions[2] + model_tolerance_Z) / 2
+    initial_shift_x = (filling_dimensions[0]) / 2
+    initial_shift_y = (filling_dimensions[1]) / 2 
+    initial_shift_z = (filling_dimensions[2]) / 2
     filling.apply_translation([initial_shift_x, initial_shift_y, initial_shift_z])
 
     # Jetzt verschiebe das Füllstück in die gewünschte Position (unabhängig von Toleranzen)

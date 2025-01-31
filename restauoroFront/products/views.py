@@ -291,11 +291,49 @@ def step4_filling_piece(request, project_id):
 
 
 
-# Schritt 5: Bestätigung und Abschluss
-def step5_filling_peace_viewer(request,project_id):
-    model_url = f"{settings.MEDIA_URL}project_{project_id}/processed/clean_model.stl"
-    threejs_filling_peace_url = f"{settings.MEDIA_URL}project_{project_id}/processed/filling_peace.stl"
-    return render(request, 'products/step5_filling_peace_viewer.html', {
-        'model_url': model_url,
-        'project_id': project_id,
-        'filling_peace_url': threejs_filling_peace_url})
+def step5_filling_peace_viewer(request, project_id):
+    project_folder = os.path.join(settings.MEDIA_ROOT, f'project_{project_id}')
+    processed_folder = os.path.join(project_folder, 'processed')
+
+    extract_filling_peace_script = os.path.join(settings.BASE_DIR, 'restauoroFront/modelling_modules/extract_filling_peace.py')
+
+    clean_model_path = os.path.join(processed_folder, 'clean_model.stl')
+    filling_peace_path = os.path.join(processed_folder, 'filling_peace.stl')
+    output_path = os.path.join(processed_folder, 'extracted_filling_peace.stl')
+    if not os.path.exists(clean_model_path):
+        return render(request, 'products/error.html', {'error_message': 'Das bereinigte Modell wurde nicht gefunden!'})
+
+    # Get parameters from session
+    minY = float(request.session.get('minY'))
+    maxY = float(request.session.get('maxY'))
+    start_x = float(request.session.get('start_coordinates_x'))
+    end_x = float(request.session.get('end_coordinates_x'))
+    start_z = float(request.session.get('start_coordinates_z'))
+    end_z = float(request.session.get('end_coordinates_z'))
+
+    command = [
+        'blender',
+        '--background',
+        '--python', extract_filling_peace_script,
+        '--', 
+        clean_model_path,
+        filling_peace_path,
+        output_path,
+        str(minY),
+        str(maxY),
+        str(start_x),
+        str(end_x),
+        str(start_z),
+        str(end_z)
+    ]
+
+    try:
+        subprocess.run(command, check=True)
+        threejs_filling_peace_url = f"{settings.MEDIA_URL}project_{project_id}/processed/extracted_filling_peace.stl"
+        return render(request, 'products/step5_filling_peace_viewer.html', {
+            'project_id': project_id,
+            'filling_peace_url': threejs_filling_peace_url
+        })
+    
+    except subprocess.CalledProcessError as e:
+        return render(request, 'products/error.html', {'error_message': f"Fehler beim Ausführen des Extraktionsskripts: {e}"})

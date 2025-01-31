@@ -13,7 +13,7 @@
 
     <!-- Überschrift über dem Viewer -->
     <div id="header-message" class="header-message">
-        Check the generated piece
+        Is the filling piece placed well?
     </div>
 
     <!-- Container für den STL-Viewer -->
@@ -39,7 +39,7 @@
         <div class="button-container">
             <form method="POST" action="{% url 'step5_filling_peace_viewer' project_id=project_id %}">
             {% csrf_token %}
-                <button type="submit" class="yellow-button"><i class="fa-solid fa-check"></i>preview</button>
+                <button type="submit" class="yellow-button"><i class="fa-solid fa-check"></i>confirm</button>
             </form>
         </div>
     </div>
