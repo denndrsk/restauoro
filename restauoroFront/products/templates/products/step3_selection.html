@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Selection</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+    {% load static %}
+    <link rel="stylesheet" type="text/css" href="{% static 'css/styles_viewer.css' %}?v={{ now|date:'U' }}"> 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+     <!-- Loader Container -->
+<div id="loader-message" class="loader-hidden">
+    <div id="loading-message" class="loading-message">cleaning up...</div>
+</div>
+<div id="loader-container" class="loader-hidden">
+    <div class="loader"></div>
+</div>
+
+    <!-- Überschrift über dem Viewer -->
+    <div id="header-message" class="header-message">
+        Click and drag to select the damaged area.
+    </div>
+    
+
+    <!-- Container für den STL-Viewer -->
+    <div id="viewer-container">
+        <div class="toggle-button-container">
+            <button id="mode-toggle-button" class="toggle-button">
+                <i class="fa-solid fa-up-down-left-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Buttons und Eingabefeld unter dem Viewer -->
+    <div id="buttons-container">
+        <!-- Modell fehlerhaft Button -->
+        <div class="buttons-container">
+            <form method="POST" action="{% url 'step2_viewer' project_id=project_id %}">
+                {% csrf_token %}
+                <button type="submit" class="red-button"><i class="fa-solid fa-rotate-right fa-sm"></i>return</button>
+            </form>
+        </div>
+        
+        
+        
+        
+       
+        <!-- Modell bereinigen Button -->
+        <div class="buttons-container">
+            <form id="cleanupForm" method="POST" action="{% url 'step4_clean_up' project_id=project_id %}">
+                {% csrf_token %}
+                <input type="hidden" id="hidden_door_thickness" name="door_thickness" value="">
+                <input type="hidden" id="scale_factor" name="scale_factor" required value="">
+                <input type="hidden" id="start_coordinates_x" name="start_coordinates_x" value="">
+                <input type="hidden" id="start_coordinates_z" name="start_coordinates_z" value="">
+                <input type="hidden" id="end_coordinates_x" name="end_coordinates_x" value="">
+                <input type="hidden" id="end_coordinates_z" name="end_coordinates_z" value="">
+                <input type="hidden" id="minY" name="minY" value="">
+                <input type="hidden" id="maxY" name="maxY" value="">
+                <input type="hidden" id="offset-y" name="offset-y" value="">
+                <button type="submit" id="submitButton" class="yellow-button"><i class="fa-solid fa-check"></i>clean up</button>
+            </form>
+        </div>
+    </div>
+    <div class = inputs-container>
+     <!-- Türdicke Eingabefeld -->
+     <form method="POST" action="{% url 'step4_clean_up' project_id=project_id %}">
+        {% csrf_token %}
+        <div class="input-container">
+            <label for="door_thickness">Door Thickness in cm</label>
+            <input type="number" id="door_thickness" name="door_thickness" step="0.01" min="0" required value="{{ door_thickness }}">
+        </div>
+        <div class="input-container">
+            <label for="scale_dimension">Horizontal Dimension in cm</label>
+            <input type="number" id="scale_dimension" name="scale_dimension" step="0.01" min="0" required value="{{ scale_dimension }}">
+        </div>
+    </form>
+    </div>
+   <!--
+    <div id="coordinates-container">
+        <p>Start Koordinaten: <span id="start-coordinates">X: 0, Z: 0</span></p>
+        <p>End Koordinaten: <span id="end-coordinates">X: 0, Z: 0</span></p>
+    </div>
+    -->
+    <!-- Three.js und STLLoader einbinden -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three/examples/js/loaders/STLLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+var modelDepth = 0; // Declare modelHeight globally
+var modelFront = 0; // Declare modelHeight globally
+var selectionY = -0.01;
+var doorThickness = modelDepth; // Setze den Standardwert auf die Modell-Tiefe
+var scene = new THREE.Scene();  // Definiere die Szene hier
+// Orthogonalprojektion Kamera initialisieren
+var camera = new THREE.OrthographicCamera(
+    -3 * (width / height),  // linke Grenze angepasst an das Seitenverhältnis
+   3 * (width / height),   // rechte Grenze angepasst an das Seitenverhältnis
+    3,                      // obere Grenze
+    -3,                     // untere Grenze
+    0.0000000001,                     // near clip
+    1000                     // far clip
+);
+// Initialisiere den Renderer zuerst
+var renderer = new THREE.WebGLRenderer({ antialias: true });
+// Raycaster und Maus-Vector für die Auswahl
+var raycaster = new THREE.Raycaster();
+var mouse = new THREE.Vector2();
+
+// Berechne die Breite und Höhe
+var width = window.innerWidth * 0.8;  // 80% der Fensterbreite
+var height = window.innerHeight * 0.8;  // 80% der Fensterhöhe
+
+// Setze die Größe des Renderers
+renderer.setSize(width, height);
+
+// Füge den Renderer zum DOM hinzu (optional)
+document.body.appendChild(renderer.domElement);
+camera.left = -3 * (width / height);
+camera.right = 3 * (width / height);
+camera.updateProjectionMatrix();
+
+document.getElementById('viewer-container').appendChild(renderer.domElement);
+//console.log("Renderer initialized");
+// STLLoader und Modell-URL laden
+var loader = new THREE.STLLoader();
+var modelUrl = "{{ model_url }}";  // URL des bearbeiteten Modells
+var mesh;
+var positions;
+// STLLoader und Modell-URL laden
+loader.load(modelUrl, function (geometry) {
+    //console.log("STL Model loaded", geometry);  // Füge dies hinzu
+     positions= geometry.attributes.position.array;
+    console.log("First 3 vertices:", positions[0], positions[1], positions[2]);
+    console.log("Last 3 vertices:", positions[positions.length - 3], positions[positions.length - 2], positions[positions.length - 1]);
+    var material = new THREE.MeshStandardMaterial({ 
+        color: 0x8A8A8A, 
+        roughness: 0.5, 
+        metalness: 0.1 
+    });
+    mesh = new THREE.Mesh(geometry, material)
+    scene.add(mesh);
+    
+
+    // Berechne die Bounding Box des Modells
+    var boundingBox = new THREE.Box3().setFromObject(mesh);
+    console.log("Bounding Box Min:", boundingBox.min);
+    console.log("Bounding Box Max:", boundingBox.max);
+    // Extrahiere die Höhe des Modells aus der Bounding Box (Y-Achse)
+    modelFront = boundingBox.min.y;
+    modelDepth = (boundingBox.max.y - boundingBox.min.y)* 100;
+    //console.log("Model depth: ", modelDepth); // Ausgabe der Modellhöhe
+
+    // Stelle sicher, dass das Eingabefeld mit der Tiefe des Modells vorab befüllt wird
+ //   document.getElementById('door_thickness').value = modelDepth;
+//}, function (xhr) {
+//    //console.log((xhr.loaded / xhr.total * 100) + '% loaded');  // Zeige Fortschritt an
+//}, function (error) {
+//   console.log("Error loading STL model", error);  // Zeige Fehler an
+//});
+
+// Event Listener für 'door-thickness' nach dem Laden des Modells
+//document.getElementById('door_thickness').addEventListener('input', function () {
+  //  var userInput = parseFloat(this.value);
+  //  if (!isNaN(userInput) && this.value !== "") {
+  //      doorThickness = userInput;  // Wenn der Benutzer einen Wert eingibt, überschreibe doorThickness
+  //  } else {
+ //       this.value = modelDepth;  // Wenn leer, behalte die Tiefe des Modells bei
+  //  }
+});
+
+
+
+
+
+
+// Gitter für die Ansicht hinzufügen
+var gridHelper = new THREE.GridHelper(50, 50); // Größe und Anzahl der Linien
+gridHelper.rotation.x = Math.PI / 2; // Drehe das Gitter in die x/y-Ebene
+scene.add(gridHelper);
+
+// Erstelle den AxesHelper mit der gewünschten Größe
+var helper = new THREE.AxesHelper(0.1); // 5 Einheiten groß
+
+// Erstelle ein Material, das Farbänderungen unterstützt
+var material = new THREE.LineBasicMaterial({ vertexColors: THREE.VertexColors });
+
+// Setze das Material für den AxesHelper
+helper.material = material;
+
+// Zugriff auf das Farben-Attribut der Geometrie
+var colors = helper.geometry.attributes.color;
+const colorX = new THREE.Color(0xFF6E61);
+const colorY = new THREE.Color(0x6255A3);
+const colorZ = new THREE.Color(0xFFD61C);
+helper.setColors(colorX, colorY, colorZ);
+// Achsen-Helper zur Szene hinzufügen
+scene.add(helper);
+helper.position.z = 0.001;
+
+// Lichter für die Szene hinzufügen
+var ambientLight = new THREE.AmbientLight(0x404040, 0.5);  // Dunkleres Umgebungslicht
+scene.add(ambientLight);
+
+var pointLight1 = new THREE.PointLight(0xffffff, 0.8, 100); // Helligkeit verringert
+pointLight1.position.set(10, 10, 10);
+scene.add(pointLight1);
+
+var pointLight2 = new THREE.PointLight(0xffffff, 0.8, 100); // Helligkeit verringert
+pointLight2.position.set(-10, -10, 10);
+scene.add(pointLight2);
+
+var pointLight3 = new THREE.PointLight(0xffffff, 0.8, 100); // Helligkeit verringert
+pointLight3.position.set(10, -10, -10);
+scene.add(pointLight3);
+
+var pointLight4 = new THREE.PointLight(0xffffff, 0.8, 100); // Helligkeit verringert
+pointLight4.position.set(-10, 10, -10);
+scene.add(pointLight4);
+
+// Kamera-Position und Steuerung
+camera.position.set(0, -1, 0);  // Setze die Kamera näher zum Modell
+camera.up.set(0, 0, 1);
+camera.lookAt(0, 0, 0);  // Auf das Zentrum der Szene schauen
+
+// OrbitControls
+var controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.25;
+controls.enableZoom = true;
+controls.enablePan = true;
+controls.screenSpacePanning = true;
+
+// Deaktiviert die Rotation der Kamera (d.h. Kamera kann nicht gedreht werden)
+controls.enableRotate = false;
+
+// Steuerungseigenschaften
+controls.rotateSpeed = 0; // Rotation Geschwindigkeit auf 0 setzen, um keine Rotation zu erlauben
+controls.zoomSpeed = 1.2;
+controls.panSpeed = 1.2;
+
+// Maussteuerung aktivieren
+controls.enableRotate = true;
+
+
+
+// Auswahlmodus aktivieren/deaktivieren
+var isSelectionMode = false;
+var selectionBox = new THREE.Box3();
+var endSelectionCoords = { x: 0, z: 0 };
+var startSelectionCoords = { x: 0, z: 0 };
+
+// Erstelle eine Clipping-Ebene (z. B. entlang der Y-Achse)
+
+
+// Linienmaterial für die Auswahlbox mit Clipping
+var selectionLineMaterial = new THREE.LineBasicMaterial({
+    color: 0xFF6E61,  // Rote Farbe
+    transparent: false,
+    linewidth: 10,
+    
+});
+// Geometrie für die Auswahlbox
+var selectionGeometry = new THREE.BufferGeometry();
+var selectionVertices = new Float32Array(8 * 3);  // 8 Punkte für die Box (jeweils 3 Koordinaten x, y, z)
+selectionGeometry.setAttribute('position', new THREE.BufferAttribute(selectionVertices, 3));
+
+var selectionLine = new THREE.LineSegments(selectionGeometry, selectionLineMaterial);
+scene.add(selectionLine);
+// Funktion zum Aktualisieren der Y-Position der Auswahllinie
+function updateSelectionLineYPosition() {
+    const zoomFactor = camera.zoom;
+    const offset = 0.1; // Abstand zur Kamera
+    selectionY = camera.position.y + offset / zoomFactor;
+
+    var linePositions = selectionLine.geometry.attributes.position.array;
+    for (let i = 1; i < linePositions.length; i += 3) {
+        linePositions[i] = selectionY; // Aktualisiere Y-Koordinate
+    }
+    selectionLine.geometry.attributes.position.needsUpdate = true;
+}
+
+
+document.getElementById('mode-toggle-button').addEventListener('click', function() {
+    isSelectionMode = !isSelectionMode;
+    if (isSelectionMode) {
+        document.getElementById('mode-toggle-button').innerHTML = '<i class="fa-solid fa-pen"></i>';
+    } else {
+        document.getElementById('mode-toggle-button').innerHTML = '<i class="fa-solid fa-up-down-left-right"></i>';
+    }
+});
+
+var pointerdown = false; // Globaler Flag, der den Zustand der Mausverfolgung verwaltet
+
+// Mouse-Event für die Auswahl (beginnend, wenn die linke Maustaste gedrückt wird)
+document.getElementById('viewer-container').addEventListener('pointerdown', function (e) {
+    if (!isSelectionMode || e.button !== 0) return; // Nur reagieren, wenn die linke Maustaste gedrückt wird
+
+    pointerdown = true; // Auswahl starten
+
+    // Hole die Position und Größe des Containers
+    const canvas = renderer.domElement;
+    const rect = canvas.getBoundingClientRect();
+    
+    // Berechne die normalisierten Koordinaten
+    const mouseX = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    const mouseZ = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+    
+    // Umrechnung in Weltkoordinaten unter Berücksichtigung von Kamera- und Zoom-Effekten
+    const worldX = (mouseX * (3 * width / height)) / camera.zoom + camera.position.x;
+    const worldZ = (mouseZ * 3) / camera.zoom + camera.position.z;
+
+    // Definiere den festen Punkt für den Ray (z.B. auf der Y=50 Ebene)
+    var fixedRayOrigin = new THREE.Vector3(worldX, -3, worldZ); 
+
+    // Setze die Richtung des Rays (orthogonal zur XY-Ebene)
+    var rayDirection = new THREE.Vector3(worldX, 1, worldZ); 
+
+    // Setze den Ray
+    raycaster.ray.origin.copy(fixedRayOrigin);
+    raycaster.ray.direction.copy(rayDirection);
+
+    // Setze den Startpunkt der Auswahlbox
+    selectionBox.min.set(worldX, -0.01, worldZ);
+    selectionBox.max.set(worldX, -0.01, worldZ);
+
+    startSelectionCoords.x = selectionBox.min.x;
+    startSelectionCoords.z = selectionBox.min.z;
+    // Update der Linien mit den Ecken der Auswahl
+    updateSelectionLine();
+    //document.getElementById('start-coordinates').textContent = `X: ${selectionBox.min.x.toFixed(2)}, Z: ${selectionBox.min.z.toFixed(2)}`;
+    document.getElementById('start_coordinates_x').value = startSelectionCoords.x;
+    document.getElementById('start_coordinates_z').value = startSelectionCoords.z;
+});
+
+// Mouse-Event für das Ziehen und Anpassen der Auswahlbox (nur während der Maustaste gedrückt ist)
+document.getElementById('viewer-container').addEventListener('pointermove', function (e) {
+    if (!isSelectionMode || !pointerdown) return; // Auswahl erfolgt nur, wenn die Maustaste gedrückt wird
+
+    // Hole das Canvas-Element und seine Position im Browserfenster
+    const canvas = renderer.domElement;
+    const rect = canvas.getBoundingClientRect();
+    
+    // Berechne die normalisierten Koordinaten
+    const mouseX = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    const mouseZ = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+    
+    // Umrechnung in Weltkoordinaten
+    const worldX = (mouseX * (3 * width / height)) / camera.zoom + camera.position.x;
+    const worldZ = (mouseZ * 3) / camera.zoom + camera.position.z;
+
+    // Setze den Endpunkt der Auswahlbox
+    selectionBox.max.set(worldX, selectionY, worldZ);
+    updateSelectionLine();
+    endSelectionCoords.x = selectionBox.max.x;
+    endSelectionCoords.z = selectionBox.max.z;
+
+    // Aktualisiere die angezeigten Koordinaten
+    //document.getElementById('end-coordinates').textContent = `X: ${selectionBox.max.x.toFixed(2)}, Z: ${selectionBox.max.z.toFixed(2)}`;
+    document.getElementById('start_coordinates_x').value = startSelectionCoords.x;
+    document.getElementById('start_coordinates_z').value = startSelectionCoords.z;
+    document.getElementById('end_coordinates_x').value = endSelectionCoords.x;
+    document.getElementById('end_coordinates_z').value = endSelectionCoords.z;
+});
+
+function calculateScale() {
+    // Holen Sie sich die Eingabewerte für die Dimension
+    const scaleDimensionInput = document.getElementById('scale_dimension');
+    const scaleDimension = parseFloat(scaleDimensionInput.value);
+
+    if (isNaN(scaleDimension) || scaleDimension <= 0) {
+        console.error("Invalid scale dimension. Please enter a positive number.");
+        return;
+    }
+
+    // Berechnung der aktuellen Breite basierend auf den Koordinaten
+    const selectionWidth = Math.abs(endSelectionCoords.x - startSelectionCoords.x);
+
+    if (selectionWidth === 0) {
+        console.error("Selection width is zero. Ensure you have selected a valid area.");
+        return;
+    }
+
+    // Skalierungsfaktor berechnen
+    const scaleFactor = scaleDimension / selectionWidth / 100;
+    console.log(`Calculated Scale Factor: ${scaleFactor}`);
+    document.getElementById('scale_factor').value = scaleFactor;
+    
+    // Sie können hier den Skalierungsfaktor verwenden, um das Modell zu skalieren
+    // Beispiel: mesh.scale.set(scaleFactor, scaleFactor, scaleFactor);
+}
+function calculateMinMaxY() {
+    if (!mesh) {
+        console.error('Mesh is not loaded yet!');
+        return;
+    }
+
+    // Überprüfe, ob die Geometrie des Modells vorhanden ist
+    if (!mesh.geometry || !mesh.geometry.attributes.position) {
+        console.error('Mesh geometry or position attribute is undefined!');
+        return;
+    }
+
+    
+    //console.log("Positions Array:", positions);
+    let minY = Infinity;
+    let maxY = -Infinity;
+
+    // Durchlaufe alle Vertices und bestimme min/max Y-Werte
+    for (let i = 0; i < positions.length; i += 3) {
+    const x = positions[i];
+    const y = positions[i + 1];
+    const z = positions[i + 2];
+
+    if (x >= selectionBox.min.x && x <= selectionBox.max.x &&
+        z >= selectionBox.min.z && z <= selectionBox.max.z) {
+        //console.log(`Point (${x}, ${y}, ${z}) is within the selection box`);
+        minY = Math.min(minY, y);
+        maxY = Math.max(maxY, y);
+    }
+    }
+
+    // Überprüfe, ob minY und maxY aktualisiert wurden
+    if (minY === Infinity || maxY === -Infinity) {
+        console.log('No vertices found within the selection box');
+    } else {
+        console.log("minY:", minY, "maxY:", maxY);
+        document.getElementById('minY').value = minY;
+        document.getElementById('maxY').value = maxY;
+    }
+}
+
+// Mouse-Event für das Beenden der Auswahl (pointerup)
+document.getElementById('viewer-container').addEventListener('pointerup', function (e) {
+    if (!isSelectionMode || e.button !== 0) return; // Nur reagieren, wenn die linke Maustaste losgelassen wird
+
+    pointerdown = false; // Setze den Flag zurück, wenn die Maus losgelassen wird
+
+    // Finalisiere die Auswahlbox, um die Endkoordinaten zu setzen
+    selectionBox.max.set(selectionBox.max.x, selectionY, selectionBox.max.z);
+
+    // Aktualisiere die Linien der Auswahl
+    updateSelectionLine();
+    calculateScale();
+    document.getElementById('start_coordinates_x').value = startSelectionCoords.x;
+    document.getElementById('start_coordinates_z').value = startSelectionCoords.z;
+    document.getElementById('end_coordinates_x').value = endSelectionCoords.x;
+    document.getElementById('end_coordinates_z').value = endSelectionCoords.z;
+    calculateMinMaxY();
+    
+    console.log("Auswahl abgeschlossen!");
+    
+});
+
+window.addEventListener('wheel', function(event) {
+    
+    //console.log("Camera-Y-position:", camera.position);
+    //console.log("Camera Zoom:", camera.zoom);
+});
+
+// Funktion zum Aktualisieren der Linien
+function updateSelectionLine() {
+    
+    var linePositions = selectionLine.geometry.attributes.position.array;
+    var min = selectionBox.min;
+    var max = selectionBox.max;
+    // Update der Eckpunkte der Auswahlbox
+    const thickness = 0.2; // Dicke in Y-Richtung
+
+    linePositions[0] = min.x; linePositions[1] = selectionY; linePositions[2] = min.z;
+    linePositions[3] = max.x; linePositions[4] = selectionY; linePositions[5] = min.z;
+
+    linePositions[6] = max.x; linePositions[7] = selectionY + thickness; linePositions[8] = min.z;
+    linePositions[9] = max.x; linePositions[10] = selectionY + thickness; linePositions[11] = max.z;
+
+    linePositions[12] = max.x; linePositions[13] = selectionY; linePositions[14] = max.z;
+    linePositions[15] = min.x; linePositions[16] = selectionY; linePositions[17] = max.z;
+
+    linePositions[18] = min.x; linePositions[19] = selectionY + thickness; linePositions[20] = max.z;
+    linePositions[21] = min.x; linePositions[22] = selectionY + thickness; linePositions[23] = min.z;
+
+    selectionLine.geometry.attributes.position.needsUpdate = true;
+}
+controls.addEventListener('change', function () {
+    updateSelectionLineYPosition(); // Aktualisiere die Y-Position der Linie
+    updateSelectionLine();          // Aktualisiere die Liniengeometrie
+});
+
+document.getElementById('scale_dimension').addEventListener('input', function () {
+    const scaleDimension = parseFloat(this.value);
+
+    // Nur berechnen, wenn eine Auswahl getroffen wurde und das Eingabefeld einen gültigen Wert enthält
+    if (!isNaN(scaleDimension) && scaleDimension > 0 && endSelectionCoords.x !== startSelectionCoords.x) {
+        calculateScale();
+    }
+});
+document.getElementById('door_thickness').addEventListener('input', function () {
+    doorThickness = document.getElementById('door_thickness').value;
+    document.getElementById('hidden_door_thickness').value = doorThickness;
+    console.log('Door Thickness:', doorThickness)
+});
+
+
+document.getElementById('submitButton').addEventListener('click', function(event) {
+    //console.log("submit");
+    
+    
+    // Zeige den Loader und die Überschrift an
+    document.getElementById('loader-container').classList.remove('loader-hidden');
+    document.getElementById('loader-message').classList.remove('loader-hidden');
+    
+    // Blende den Rest der Seite aus
+    document.getElementById('header-message').style.display = 'none';
+    document.getElementById('buttons-container').style.display = 'none';
+    //document.getElementById('coordinates-container').style.display = 'none';
+    document.getElementById('viewer-container').style.display = 'none';
+
+    
+});
+// Render-Schleife
+function animate() {
+    updateSelectionLineYPosition()
+    requestAnimationFrame(animate);
+    controls.update();  // Aktualisiere die Steuerung
+    renderer.render(scene, camera);  // Render die Szene
+}
+animate();
+
+    </script>
+</body>
+</html>

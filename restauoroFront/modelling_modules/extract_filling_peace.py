@@ -2,41 +2,43 @@ import bpy
 import sys
 
 def extract_filling_piece(clean_model_path, filling_peace_path, output_path):
-    # Clear existing objects
-    bpy.ops.object.select_all(action='SELECT')
-    bpy.ops.object.delete()
-
-    # Import the door model
+    # Import door shell and filling piece
     bpy.ops.import_mesh.stl(filepath=clean_model_path)
     door = bpy.context.selected_objects[0]
-    door.name = "Door"  # Explicitly name the door object
+    door.name = "Door"
 
-    # Import the filling piece
     bpy.ops.import_mesh.stl(filepath=filling_peace_path)
     filling = bpy.context.selected_objects[0]
-    filling.name = "Filling_Piece"  # Explicitly name the filling piece
+    filling.name = "Filling_Piece"
 
-    # Apply Boolean DIFFERENCE to the DOOR (subtract filling)
-    bool_mod = door.modifiers.new("Bool", 'BOOLEAN')
-    bool_mod.operation = 'DIFFERENCE'
-    bool_mod.object = filling
-    bpy.context.view_layer.objects.active = door
-    bpy.ops.object.modifier_apply(modifier="Bool")
-
-    # Cleanup: Remove floating geometry
+    # Switch to edit mode for the filling piece
+    bpy.context.view_layer.objects.active = filling
     bpy.ops.object.mode_set(mode='EDIT')
-    bpy.ops.mesh.select_all(action='SELECT')
-    bpy.ops.mesh.separate(type='LOOSE')  # Split into loose parts
+
+    # Select loose geometry (assumed to be internal filling piece)
+    bpy.ops.mesh.select_all(action='DESELECT')
+    bpy.ops.mesh.select_loose()
+
+    # Separate the internal geometry
+    bpy.ops.mesh.separate(type='SELECTED')
     bpy.ops.object.mode_set(mode='OBJECT')
 
-    # Delete small fragments (keep largest piece)
-    objs = [obj for obj in bpy.context.scene.objects if obj.type == 'MESH']
-    objs.sort(key=lambda x: x.dimensions.length, reverse=True)
-    for obj in objs[1:]:  # Delete all but the largest
-        bpy.data.objects.remove(obj)
+    # Rename and clean the new separated object
+    extracted_piece = bpy.context.selected_objects[-1]
+    extracted_piece.name = "Extracted_Filling_Piece"
 
-    # Export the extracted filling piece
-    bpy.ops.export_mesh.stl(filepath=output_path)
+    # Optional: Make sure the extracted piece is watertight
+    bpy.context.view_layer.objects.active = extracted_piece
+    bpy.ops.object.modifier_add(type='SOLIDIFY')
+    bpy.context.object.modifiers["Solidify"].thickness = 0.01  # Adjust thickness as needed
+    bpy.ops.object.modifier_apply(modifier="Solidify")
+
+    # Export the cleaned filling piece
+    bpy.ops.export_mesh.stl(filepath=output_path, use_selection=True)
+    print(f"Extracted filling piece saved to {output_path}")
+
+# Example call
+extract_filling_piece('/path/to/clean_model.stl', '/path/to/filling_piece.stl', '/path/to/output_filling_piece.stl')
 
 if __name__ == "__main__":
     clean_model_path = sys.argv[-3]

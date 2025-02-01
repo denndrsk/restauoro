@@ -23,7 +23,7 @@ def create_filling_piece(clean_model_output_path, filling_Piece_model_output_pat
     # Die untere linke Ecke eines standardmäßig erstellten Quaders liegt bei (-width/2, -height/2, -depth/2)
     # Daher müssen wir das Füllstück um (width/2, height/2, depth/2) verschieben, um die Ecke nach (0, 0, 0) zu bringen
     initial_shift_x = (filling_dimensions[0]) / 2
-    initial_shift_y = (filling_dimensions[1]) / 2 
+    initial_shift_y = (filling_dimensions[1]) / 2
     initial_shift_z = (filling_dimensions[2]) / 2
     filling.apply_translation([initial_shift_x, initial_shift_y, initial_shift_z])
 

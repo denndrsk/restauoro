@@ -8,7 +8,7 @@ from modelling_modules.clean_up_3 import process_model_neu, process_3d_model_vie
 from modelling_modules.align_model import align_model
 from modelling_modules.scale_model import scale_model
 from modelling_modules.create_filling_piece import create_filling_piece
-from modelling_modules.solidify_model import hollow_to_solid
+
 import subprocess
 from django.template.loader import render_to_string
 import trimesh
@@ -88,7 +88,7 @@ def step2_viewer(request, project_id):
 
 
 
-def step2_5_selection(request, project_id):
+def step3_selection(request, project_id):
     model_filename = f'raw_model_{project_id}_aligned.stl'
     model_folder = os.path.join(settings.MEDIA_ROOT, f'project_{project_id}')
     model_path = os.path.join(model_folder, model_filename)
@@ -110,7 +110,7 @@ def step2_5_selection(request, project_id):
     minY = request.POST.get('minY')
     maxY = request.POST.get('maxY')
     # Übergabe von project_id und door_thickness an das Template
-    return render(request, 'products/step2_5_selection.html', {
+    return render(request, 'products/step3_selection.html', {
         'model_url': model_url,
         'project_id': project_id,
         'door_thickness': door_thickness,  # Übergabe der Türdicke an das Template
@@ -126,7 +126,7 @@ def step2_5_selection(request, project_id):
    
 
 
-def step3_clean_up(request, project_id):
+def step4_clean_up(request, project_id):
     """
     Bereinigt das Modell, solidifiziert es und speichert das Ergebnis.
     """
@@ -202,7 +202,7 @@ def step3_clean_up(request, project_id):
     
     
     # Übergabe an das Template
-    return render(request, 'products/step3_clean_up.html', {
+    return render(request, 'products/step4_clean_up.html', {
         'model_url': processed_model_url,
         'project_id': project_id,
         'door_thickness': door_thickness,
@@ -226,10 +226,10 @@ def step3_clean_up(request, project_id):
 
 
 
-def step4_filling_piece(request, project_id):
+def step5_filling_piece(request, project_id):
     #für trimesh
     processed_model_url = os.path.join(settings.MEDIA_ROOT, f'project_{project_id}/processed/clean_model.stl')
-    filling_peace_url = os.path.join(settings.MEDIA_ROOT, f'project_{project_id}/processed/filling_peace.stl')
+    filling_piece_url = os.path.join(settings.MEDIA_ROOT, f'project_{project_id}/processed/filling_piece.stl')
 
 
     scale_factor = float(request.session.get('scale_factor'))
@@ -242,6 +242,7 @@ def step4_filling_piece(request, project_id):
     maxY = float(request.session.get('maxY', 0))
     minY = float(request.session.get('minY', 0))
     door_thickness = (maxY - minY)*scale_factor
+    #door_thickness = float(request.session.get('door_thickness'))
     print("scale by:    ", scale_factor)
     print("start coords*scaled", start_coordinates_x,start_coordinates_z)
     print("minY:", minY)
@@ -252,7 +253,7 @@ def step4_filling_piece(request, project_id):
     
     #für threejs
     model_url = f"{settings.MEDIA_URL}project_{project_id}/processed/clean_model.stl"
-    threejs_filling_peace_url = f"{settings.MEDIA_URL}project_{project_id}/processed/filling_peace.stl"
+    threejs_filling_piece_url = f"{settings.MEDIA_URL}project_{project_id}/processed/filling_piece.stl"
 
 
     # Berechnung der Dimensionen des Füllstücks
@@ -268,16 +269,16 @@ def step4_filling_piece(request, project_id):
         minY, 
         min(start_coordinates_z, end_coordinates_z)  # Z-Position
     )
-    create_filling_piece(processed_model_url, filling_peace_url, filling_dimensions, filling_position)
+    create_filling_piece(processed_model_url, filling_piece_url, filling_dimensions, filling_position)
 
 
 
 
 
-    return render(request, 'products/step4_filling_piece.html', {
+    return render(request, 'products/step5_filling_piece.html', {
         'model_url': model_url,
         'project_id': project_id,
-        'filling_peace_url': threejs_filling_peace_url,
+        'filling_piece_url': threejs_filling_piece_url,
         'door_thickness': door_thickness,
         'scale_factor': scale_factor,
         'start_coordinates_x' : start_coordinates_x,
@@ -294,15 +295,15 @@ def step4_filling_piece(request, project_id):
 
 
 
-def step5_filling_peace_viewer(request, project_id):
+def step6_filling_piece_viewer(request, project_id):
     project_folder = os.path.join(settings.MEDIA_ROOT, f'project_{project_id}')
     processed_folder = os.path.join(project_folder, 'processed')
 
-    extract_filling_peace_script = os.path.join(settings.BASE_DIR, 'restauoroFront/modelling_modules/extract_filling_peace.py')
+    extract_filling_piece_script = os.path.join(settings.BASE_DIR, 'restauoroFront/modelling_modules/extract_filling_piece.py')
 
     clean_model_path = os.path.join(processed_folder, 'clean_model.stl')
-    filling_peace_path = os.path.join(processed_folder, 'filling_peace.stl')
-    output_path = os.path.join(processed_folder, 'extracted_filling_peace.stl')
+    filling_piece_path = os.path.join(processed_folder, 'filling_piece.stl')
+    output_path = os.path.join(processed_folder, 'extracted_filling_piece.stl')
     if not os.path.exists(clean_model_path):
         return render(request, 'products/error.html', {'error_message': 'Das bereinigte Modell wurde nicht gefunden!'})
 
@@ -317,19 +318,19 @@ def step5_filling_peace_viewer(request, project_id):
     command = [
         'blender',
         '--background',
-        '--python', extract_filling_peace_script,
+        '--python', extract_filling_piece_script,
         '--', 
         clean_model_path,
-        filling_peace_path,
+        filling_piece_path,
         output_path
     ]
 
     try:
         #subprocess.run(command, check=True)
-        threejs_filling_peace_url = f"{settings.MEDIA_URL}project_{project_id}/processed/filling_peace.stl"
-        return render(request, 'products/step5_filling_peace_viewer.html', {
+        threejs_filling_piece_url = f"{settings.MEDIA_URL}project_{project_id}/processed/filling_piece.stl"
+        return render(request, 'products/step6_filling_piece_viewer.html', {
             'project_id': project_id,
-            'filling_peace_url': threejs_filling_peace_url
+            'filling_piece_url': threejs_filling_piece_url
         })
     
     except subprocess.CalledProcessError as e:

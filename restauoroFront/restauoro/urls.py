@@ -20,5 +20,5 @@ from django.urls import path, include
 
 urlpatterns = [
     # Deine App-URLs einbinden
-    path('wizard/', include('products.urls')),  # Falls du URLs in der App hast
+    path('restauoro/', include('products.urls')),  # Falls du URLs in der App hast
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

@@ -120,16 +120,16 @@ def process_model_neu(input_path, output_folder):
 
         print(f"Total area of the model: {model_area:.2f} units²")
         print(f"Target number of polygons: {target_face_count}")
-        ms.meshing_decimation_quadric_edge_collapse(
-            targetfacenum=target_face_count, 
-            preservetopology=True, 
-            preserveboundary=True, 
-            preservenormal=True, 
-            qualitythr=0.3, 
-            autoclean=True
-        )
-        result = save_debug_mesh("simplify", ms)
-        if result: return result
+        #ms.meshing_decimation_quadric_edge_collapse(
+         #   targetfacenum=target_face_count, 
+         #   preservetopology=True, 
+         #   preserveboundary=True, 
+          #  preservenormal=True, 
+           # qualitythr=0.3, 
+           # autoclean=True
+        #)
+        #result = save_debug_mesh("simplify", ms)
+        #if result: return result
         
                 
         # 2. Doppelte Geometrien entfernen
