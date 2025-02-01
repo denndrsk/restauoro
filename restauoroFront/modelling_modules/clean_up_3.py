@@ -56,7 +56,7 @@ def process_model_neu(input_path, output_folder):
         smoothed_output_path = os.path.join(output_folder, "smoothed_model.stl")
         
         # 3. Anwenden der Laplacian-Glättung
-        for i in range(4):  # Mehr Iterationen für stärkere Glättung
+        for i in range(2):  # Mehr Iterationen für stärkere Glättung
             ms.apply_coord_hc_laplacian_smoothing()
 
             # 4. Zwischenspeichern nach jedem Glättungsschritt

@@ -8,6 +8,7 @@ from modelling_modules.clean_up_3 import process_model_neu, process_3d_model_vie
 from modelling_modules.align_model import align_model
 from modelling_modules.scale_model import scale_model
 from modelling_modules.create_filling_piece import create_filling_piece
+from modelling_modules.solidify_model import hollow_to_solid
 import subprocess
 from django.template.loader import render_to_string
 import trimesh
@@ -133,7 +134,8 @@ def step3_clean_up(request, project_id):
     project_folder = os.path.join(settings.MEDIA_ROOT, f'project_{project_id}')
     raw_model_path = os.path.join(project_folder, f'raw_model_{project_id}_aligned.stl')
     processed_folder = os.path.join(project_folder, 'processed')
-
+    solidified_model_path = os.path.join(processed_folder, f"solidified_model_{project_id}.stl")
+    scaled_model_path = os.path.join(project_folder, f'raw_model_{project_id}_scaled.stl')
     
 
     # Überprüfen, ob das Rohmodell existiert
@@ -143,7 +145,7 @@ def step3_clean_up(request, project_id):
     # Sicherstellen, dass der Ordner für die verarbeiteten Modelle existiert
     os.makedirs(processed_folder, exist_ok=True)
     scale_factor = float(request.POST.get('scale_factor', 1.0))
-    print("hier ist",scale_factor)
+    
     
 
     start_coordinates_x = request.POST.get('start_coordinates_x')
@@ -152,13 +154,11 @@ def step3_clean_up(request, project_id):
     end_coordinates_z = request.POST.get('end_coordinates_z')
     minY = float(request.POST.get('minY'))
     maxY = float(request.POST.get('maxY'))
-
-    print(start_coordinates_x,start_coordinates_z,end_coordinates_x,end_coordinates_z)
+   
     
-    scaled_model_path = os.path.join(project_folder, f'raw_model_{project_id}_scaled.stl')
     print(minY, maxY)
     scale_model(raw_model_path,scale_factor, scaled_model_path)
-    door_thickness = (maxY-minY)/2*scale_factor#float(request.POST.get('door_thickness', 0.1)) / 100 
+    door_thickness = float(request.POST.get('door_thickness', 0.1)) / 100 #(maxY-minY)*scale_factor
 
     print(door_thickness)
     # Blender-Skript-Pfad
@@ -173,6 +173,8 @@ def step3_clean_up(request, project_id):
     blender_script = os.path.join(settings.BASE_DIR, 'restauoroFront/modelling_modules/solidify_model.py')
     
     
+
+    
     door_thickness_str = str(door_thickness)
     # Blender-Befehl
     command = [
@@ -181,9 +183,9 @@ def step3_clean_up(request, project_id):
     ]
 
     try:
-        # Starte Blender im Hintergrund
+         #Starte Blender im Hintergrund
         subprocess.run(command, check=True)
-        #print(f"Solidified Modell gespeichert: {os.path.join(processed_folder, f'solidified_model_{project_id}.stl')}")
+        print(f"Solidified Modell gespeichert: {os.path.join(processed_folder, f'solidified_model_{project_id}.stl')}")
     except subprocess.CalledProcessError as e:
         return render(request, 'products/error.html', {'error_message': f"Fehler beim Solidifizieren des Modells: {e}"})
 
@@ -237,9 +239,9 @@ def step4_filling_piece(request, project_id):
     end_coordinates_x = float(request.session.get('end_coordinates_x', 0)) * scale_factor
     end_coordinates_z = float(request.session.get('end_coordinates_z', 0)) * scale_factor
     
-    maxY = float(request.session.get('maxY', 0))*scale_factor
-    minY = float(request.session.get('minY', 0))*scale_factor
-    door_thickness = maxY - minY
+    maxY = float(request.session.get('maxY', 0))
+    minY = float(request.session.get('minY', 0))
+    door_thickness = (maxY - minY)*scale_factor
     print("scale by:    ", scale_factor)
     print("start coords*scaled", start_coordinates_x,start_coordinates_z)
     print("minY:", minY)
@@ -319,13 +321,7 @@ def step5_filling_peace_viewer(request, project_id):
         '--', 
         clean_model_path,
         filling_peace_path,
-        output_path,
-        str(minY),
-        str(maxY),
-        str(start_x),
-        str(end_x),
-        str(start_z),
-        str(end_z)
+        output_path
     ]
 
     try:
