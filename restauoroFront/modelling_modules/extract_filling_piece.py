@@ -1,13 +1,13 @@
 import bpy
 import sys
 
-def extract_filling_piece(clean_model_path, filling_peace_path, output_path):
+def extract_filling_piece(clean_model_path, filling_piece_path, output_path):
     # Import door shell and filling piece
     bpy.ops.import_mesh.stl(filepath=clean_model_path)
     door = bpy.context.selected_objects[0]
     door.name = "Door"
 
-    bpy.ops.import_mesh.stl(filepath=filling_peace_path)
+    bpy.ops.import_mesh.stl(filepath=filling_piece_path)
     filling = bpy.context.selected_objects[0]
     filling.name = "Filling_Piece"
 
@@ -42,6 +42,6 @@ extract_filling_piece('/path/to/clean_model.stl', '/path/to/filling_piece.stl', 
 
 if __name__ == "__main__":
     clean_model_path = sys.argv[-3]
-    filling_peace_path = sys.argv[-2]
+    filling_piece_path = sys.argv[-2]
     output_path = sys.argv[-1]
-    extract_filling_piece(clean_model_path, filling_peace_path, output_path)
+    extract_filling_piece(clean_model_path, filling_piece_path, output_path)

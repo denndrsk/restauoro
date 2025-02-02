@@ -1,18 +1,14 @@
-import uuid
-import os
 from django.conf import settings
 from django.core.files.storage import FileSystemStorage
 from django.shortcuts import render, redirect
 from django.http import JsonResponse
-from modelling_modules.clean_up_3 import process_model_neu, process_3d_model_view
+from modelling_modules.clean_up import process_model_neu
 from modelling_modules.align_model import align_model
 from modelling_modules.scale_model import scale_model
 from modelling_modules.create_filling_piece import create_filling_piece
-
 import subprocess
-from django.template.loader import render_to_string
 import trimesh
-
+import os
 
 
 
@@ -69,22 +65,14 @@ def step2_viewer(request, project_id):
     model_filename = f'raw_model_{project_id}_aligned.stl'
     model_folder = os.path.join(settings.MEDIA_ROOT, f'project_{project_id}')
     model_path = os.path.join(model_folder, model_filename)
-
+    model_url = f"{settings.MEDIA_URL}project_{project_id}/{model_filename}"
     if not os.path.exists(model_path):
         return render(request, 'products/error.html', {'error_message': 'Modell nicht gefunden!'})
-
-    # URL für das Modell
-    model_url = f"{settings.MEDIA_URL}project_{project_id}/{model_filename}"
-
-    # Türdicke aus dem Formular (Standardwert 0.4)
-    #door_thickness = request.POST.get('door_thickness', 0.4)
-
-    # Übergabe von project_id und door_thickness an das Template
     return render(request, 'products/step2_viewer.html', {
         'model_url': model_url,
         'project_id': project_id
-        #'door_thickness': door_thickness  # Übergabe der Türdicke an das Template
     })
+
 
 
 
@@ -123,44 +111,37 @@ def step3_selection(request, project_id):
         'minY' : minY
     })
     
-   
+
 
 
 def step4_clean_up(request, project_id):
     """
     Bereinigt das Modell, solidifiziert es und speichert das Ergebnis.
     """
-     # Verzeichnisse und Pfade
+    # Verzeichnisse und Pfade
     project_folder = os.path.join(settings.MEDIA_ROOT, f'project_{project_id}')
     raw_model_path = os.path.join(project_folder, f'raw_model_{project_id}_aligned.stl')
     processed_folder = os.path.join(project_folder, 'processed')
     solidified_model_path = os.path.join(processed_folder, f"solidified_model_{project_id}.stl")
     scaled_model_path = os.path.join(project_folder, f'raw_model_{project_id}_scaled.stl')
-    
-
     # Überprüfen, ob das Rohmodell existiert
     if not os.path.exists(raw_model_path):
         return render(request, 'products/error.html', {'error_message': 'Rohmodell nicht gefunden!'})
-
     # Sicherstellen, dass der Ordner für die verarbeiteten Modelle existiert
     os.makedirs(processed_folder, exist_ok=True)
     scale_factor = float(request.POST.get('scale_factor', 1.0))
-    
-    
-
     start_coordinates_x = request.POST.get('start_coordinates_x')
     start_coordinates_z = request.POST.get('start_coordinates_z')
     end_coordinates_x = request.POST.get('end_coordinates_x')
     end_coordinates_z = request.POST.get('end_coordinates_z')
     minY = float(request.POST.get('minY'))
     maxY = float(request.POST.get('maxY'))
-   
-    
     print(minY, maxY)
     scale_model(raw_model_path,scale_factor, scaled_model_path)
     door_thickness = float(request.POST.get('door_thickness', 0.1)) / 100 #(maxY-minY)*scale_factor
 
     print(door_thickness)
+
     # Blender-Skript-Pfad
     request.session['minY'] = minY
     request.session['maxY'] = maxY
@@ -170,11 +151,7 @@ def step4_clean_up(request, project_id):
     request.session['start_coordinates_z'] = start_coordinates_z
     request.session['end_coordinates_x'] = end_coordinates_x
     request.session['end_coordinates_z'] = end_coordinates_z
-    blender_script = os.path.join(settings.BASE_DIR, 'restauoroFront/modelling_modules/solidify_model.py')
-    
-    
-
-    
+    blender_script = os.path.join(settings.BASE_DIR, 'restauoroFront/modelling_modules/solidify_model.py')  
     door_thickness_str = str(door_thickness)
     # Blender-Befehl
     command = [
@@ -200,7 +177,6 @@ def step4_clean_up(request, project_id):
     # Überprüfen, ob das bereinigte Modell wasserdicht ist
     is_watertight = result.get("is_watertight", False)
     
-    
     # Übergabe an das Template
     return render(request, 'products/step4_clean_up.html', {
         'model_url': processed_model_url,
@@ -215,15 +191,6 @@ def step4_clean_up(request, project_id):
         'maxY' : maxY,
         'minY' : minY
     })
-
-
-
-
-
-#----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-
-
 
 
 def step5_filling_piece(request, project_id):
@@ -243,15 +210,15 @@ def step5_filling_piece(request, project_id):
     minY = float(request.session.get('minY', 0))
     door_thickness = (maxY - minY)*scale_factor
     #door_thickness = float(request.session.get('door_thickness'))
-    print("scale by:    ", scale_factor)
-    print("start coords*scaled", start_coordinates_x,start_coordinates_z)
-    print("minY:", minY)
-    print("maxY:", maxY)
-    print("end coords*scaled", end_coordinates_x,end_coordinates_z)
-    print(door_thickness)
+    #print("scale by:", scale_factor)
+    #print("start coords*scaled", start_coordinates_x,start_coordinates_z)
+    #print("minY:", minY)
+    #print("maxY:", maxY)
+    #print("end coords*scaled", end_coordinates_x,end_coordinates_z)
+    #print(door_thickness)
     
     
-    #für threejs
+    #for threejs
     model_url = f"{settings.MEDIA_URL}project_{project_id}/processed/clean_model.stl"
     threejs_filling_piece_url = f"{settings.MEDIA_URL}project_{project_id}/processed/filling_piece.stl"
 
@@ -285,14 +252,6 @@ def step5_filling_piece(request, project_id):
         'start_coordinates_z' : start_coordinates_z,
         'end_coordinates_x' : end_coordinates_x,
         'end_coordinates_z' : end_coordinates_z})
-
-
-
-
-
-
-
-
 
 
 def step6_filling_piece_viewer(request, project_id):
