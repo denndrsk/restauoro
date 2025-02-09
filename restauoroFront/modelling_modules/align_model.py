@@ -10,34 +10,33 @@ def align_model(project_id):
     model_path = os.path.join(model_folder, model_filename)
 
     if not os.path.exists(model_path):
-        raise FileNotFoundError(f"Modell {model_filename} nicht gefunden!")
+        raise FileNotFoundError(f"Model {model_filename} not found!")
 
-    # Lade das STL-Modell
+    # Load the STL model
     stl_mesh = trimesh.load_mesh(model_path)
     
-    # Überprüfe die Dimensionen der Punkte
-    print(f"Form der Punkte im Modell: {stl_mesh.vertices.shape}")
+    
 
-    # Berechne die minimalen x-, y- und z-Werte (maximale Werte sind auch nützlich)
-    min_x = np.min(stl_mesh.vertices[:, 0])  # Minimale x-Koordinate
+    # Calculate the minimum x, y, and z values 
+    min_x = np.min(stl_mesh.vertices[:, 0])  
     max_x = np.max(stl_mesh.vertices[:, 0])
-    min_y = np.min(stl_mesh.vertices[:, 1])  # Minimale y-Koordinate
-    min_z = np.min(stl_mesh.vertices[:, 2])  # Minimale z-Koordinate
+    min_y = np.min(stl_mesh.vertices[:, 1]) 
+    min_z = np.min(stl_mesh.vertices[:, 2])
 
-   # Bestimme den Mittelpunkt der x-Achse der Bounding-Box
+    # Determine the center of the x-axis of the bounding box
     center_x = (min_x + max_x) / 2
 
-    # Berechne die Verschiebung, um den Mittelpunkt der x-Achse auf x=0 zu verschieben
+    # Calculate the shift to move the center of the x-axis to x=0
     shift_x = -center_x
     shift_y = -min_y
     shift_z = -min_z
 
-    # Verschiebe die Punkte des Modells
+    # Shift the model's vertices
     stl_mesh.vertices += np.array([shift_x, shift_y, shift_z])
 
-    # Speichern des ausgerichteten Modells
+    # Save the aligned model
     aligned_model_filename = f'raw_model_{project_id}_aligned.stl'
     aligned_model_path = os.path.join(model_folder, aligned_model_filename)
     stl_mesh.export(aligned_model_path)
 
-    print(f"Ausgerichtetes Modell gespeichert: {aligned_model_filename}")
+    print(f"Aligned model saved: {aligned_model_filename}")

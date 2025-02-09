@@ -3,50 +3,45 @@ import numpy as np
 
 def create_filling_piece(clean_model_output_path, filling_Piece_model_output_path, filling_dimensions, filling_position):
     
-    # Lade das Tür-Modell
+    # Load the door model
     door_mesh = trimesh.load_mesh(clean_model_output_path)
     
-    # Toleranzen für das Füllstück
-    model_tolerance_X = 0  # Keine Toleranz in X-Richtung
-    model_tolerance_Y = -0.02  # Reduziere die Dicke des Füllstücks in Y-Richtung
-    model_tolerance_Z = 0  # Keine Toleranz in Z-Richtung
+    # Tolerances for the filling piece
+    model_tolerance_X = 0  
+    model_tolerance_Y = -0.02
+    model_tolerance_Z = 0  
 
-    # Erstelle das Quader-Füllstück mit Toleranzen
-    # Die Toleranzen werden symmetrisch angewendet, sodass das Füllstück zentriert bleibt
+    # Create the box filling piece with tolerances
     filling = trimesh.creation.box([
         filling_dimensions[0] + model_tolerance_X,  # Breite
         filling_dimensions[1] + model_tolerance_Y,  # Dicke (reduziert um Toleranz)
         filling_dimensions[2] + model_tolerance_Z   # Höhe
     ])
 
-    # Verschiebe das Füllstück, sodass die untere linke Ecke bei (0, 0, 0) liegt
-    # Die untere linke Ecke eines standardmäßig erstellten Quaders liegt bei (-width/2, -height/2, -depth/2)
-    # Daher müssen wir das Füllstück um (width/2, height/2, depth/2) verschieben, um die Ecke nach (0, 0, 0) zu bringen
+    # Move the filling piece so that the bottom left corner is at (0, 0, 0)
     initial_shift_x = (filling_dimensions[0]) / 2
     initial_shift_y = (filling_dimensions[1]) / 2
     initial_shift_z = (filling_dimensions[2]) / 2
     filling.apply_translation([initial_shift_x, initial_shift_y, initial_shift_z])
 
-    # Jetzt verschiebe das Füllstück in die gewünschte Position (unabhängig von Toleranzen)
-    shift_x = filling_position[0]  # X-Position (unverändert)
-    shift_y = filling_position[1]  # Y-Position (unverändert)
-    shift_z = filling_position[2]  # Z-Position (unverändert)
+    # Now move the filling piece to the desired position (independent of tolerances)
+    shift_x = filling_position[0]  
+    shift_y = filling_position[1]  
+    shift_z = filling_position[2]  
     filling.apply_translation([shift_x, shift_y, shift_z])
-    # **Neue Funktion: Mesh unterteilen**
+    # subdivide mesh (optional)
     def subdivide_mesh(mesh, iterations=3):
-        """ Unterteilt das Mesh in kleinere Dreiecke für mehr Details """
+        # Subdivide the mesh to create smaller triangles for more detail
         for _ in range(iterations):  
             vertices, faces = trimesh.remesh.subdivide(mesh.vertices, mesh.faces)
             mesh = trimesh.Trimesh(vertices=vertices, faces=faces)  # Neues Mesh erstellen
         return mesh
 
-    # Wende die Unterteilung an
+    # Apply the subdivision
     filling = subdivide_mesh(filling, iterations=3)
-    # Berechne die Differenz zwischen Füllstück und Türmodell
+    # Calculate the difference between the filling piece and the door model
     filling_piece = trimesh.boolean.difference([filling, door_mesh], engine='blender')
 
-
-
-    # Speichere das resultierende Füllstück als STL-Datei
+    # Save the resulting filling piece as an STL file
     filling_piece.export(filling_Piece_model_output_path)
     print(f"Füllstück gespeichert unter: {filling_Piece_model_output_path}")

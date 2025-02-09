@@ -58,7 +58,7 @@
 /* Zusätzliche Stile für die Nachricht */
 .loading-message {
     position: absolute; /* Absolute Positionierung über dem Spinner */
-    top: 30%; /* Position der Nachricht relativ zur Höhe */
+    top: 36%; /* Position der Nachricht relativ zur Höhe */
     left: 50%;
     transform: translateX(-50%); /* Zentriert die Nachricht horizontal */
     margin-bottom: 20px;
@@ -102,7 +102,7 @@ html, body {
     align-items: center;
     margin: 0 auto;
     overflow: hidden;
-    border-radius: 50px;
+    border-radius: 25px;
    
 }
 
@@ -124,6 +124,7 @@ html, body {
     gap: 15px; /* Abstand zwischen den Buttons */
     margin-top: 30px;
     width: 100%; /* Volle Breite des Containers */
+    height: 5vh;
 }
 button i {
     margin-right: 8px; /* Abstand zwischen Icon und Text */
@@ -262,49 +263,10 @@ button.toggle-button i {
 
 /* Responsive Anpassungen */
 
-/* Für Bildschirme bis 800px */
-@media (max-width: 850px) {
-    html, body {
-        font-size: 14px; /* Kleinere Schriftgröße */
-    }
 
-    button {
-        padding: 0.8em 1.6em !important; /* Reduziertes Padding */
-        font-size: 0.8rem!important; /* Kleinere Schriftgröße */
-        min-width: 100px!important; /* Reduzierte Mindestbreite */
-    }
-    
-  
 
-    #buttons-container {
-        justify-content: space-evenly; /* Buttons gleichmäßig nebeneinander */
-    }
-}
 
-/* Für Bildschirme bis 500px */
-@media (max-width: 625px) {
-    html, body {
-        font-size: 12px; /* Noch kleinere Schriftgröße */
-    }
 
-    button {
-        padding: 0.6em 1.2em; /* Weiter reduziertes Padding */
-        font-size: 0.6rem; /* Noch kleinere Schriftgröße */
-        min-width: 80px; /* Kleinere Mindestbreite */
-        border-radius: 50px; /* Weichere Ecken */
-    }
-
-    
-    #buttons-container {
-        width: 100%; /* Maximale Breite */
-        flex-direction: row; /* Nebeneinander anordnen */
-        justify-content: space-evenly; /* Buttons gleichmäßig nebeneinander */
-        gap: 8px; /* Etwas weniger Abstand zwischen den Buttons */
-        margin-top: 20px;
-    }
-
-    
-}
 
 /* Für Bildschirme bis 390px */
 @media (max-width: 450px) {

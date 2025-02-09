@@ -1,3 +1,21 @@
 {
-    "CodeGPT.apiKey": "CodeGPT Plus Beta"
+  "CodeGPT.apiKey": "CodeGPT Plus",
+  //"editor.tokenColorCustomizations": {
+    //"textMateRules": [
+      //{ "scope": "comment", "settings": { "foreground": "#9d9b9b" } },
+      //{ "scope": "keyword.control", "settings": { "foreground": "#FFD61C" } },
+      //{ "scope": "keyword.operator", "settings": { "foreground": "#FFD61C" } },
+      //{ "scope": "string", "settings": { "foreground": "#FF6E61" } },
+    //  { "scope": "storage.type", "settings": { "foreground": "#FFD61C" } },
+      //{ "scope": "storage.modifier", "settings": { "foreground": "#212121" } },
+     // { "scope": "text.html.basic", "settings": { "foreground": "#000000" } }, 
+     // { "scope": "text.plain", "settings": { "foreground": "#000000" } }, 
+      //{ "scope": "meta.diff", "settings": { "foreground": "#000000" } }, 
+      //{ "scope": "meta.embedded.block", "settings": { "foreground": "#000000" } },
+      //{ "scope": "source", "settings": { "foreground": "#000000" } }
+    //]
+  //},
+  //"workbench.colorCustomizations": {
+    //"editor.background": "#767676"
+  //}
 }

@@ -14,7 +14,7 @@
         .container {
             background-color: #151515;
             padding: 20px;
-            border-radius: 50px;
+            border-radius: 25px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             text-align: center;
             width: 100%;
@@ -39,7 +39,7 @@
             font-weight: 700; /* Fett */
             background-color: #FFD61C;
             color: rgb(0, 0, 0);
-            border-radius: 50px; /* Corner Radius */
+            border-radius: 25px; /* Corner Radius */
             padding: 10px 20px;
                         cursor: pointer;
             font-size: 16px;

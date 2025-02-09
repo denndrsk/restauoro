@@ -131,9 +131,9 @@ var loader = new THREE.STLLoader();
 var modelUrl = "{{ model_url }}";  // URL des bearbeiteten Modells
 var mesh;
 var positions;
-// STLLoader und Modell-URL laden
+//load the model
 loader.load(modelUrl, function (geometry) {
-    //console.log("STL Model loaded", geometry);  // Füge dies hinzu
+    
      positions= geometry.attributes.position.array;
     console.log("First 3 vertices:", positions[0], positions[1], positions[2]);
     console.log("Last 3 vertices:", positions[positions.length - 3], positions[positions.length - 2], positions[positions.length - 1]);
@@ -146,31 +146,14 @@ loader.load(modelUrl, function (geometry) {
     scene.add(mesh);
     
 
-    // Berechne die Bounding Box des Modells
+//calculate the bounding box of the model
     var boundingBox = new THREE.Box3().setFromObject(mesh);
     console.log("Bounding Box Min:", boundingBox.min);
     console.log("Bounding Box Max:", boundingBox.max);
-    // Extrahiere die Höhe des Modells aus der Bounding Box (Y-Achse)
+
     modelFront = boundingBox.min.y;
     modelDepth = (boundingBox.max.y - boundingBox.min.y)* 100;
-    //console.log("Model depth: ", modelDepth); // Ausgabe der Modellhöhe
 
-    // Stelle sicher, dass das Eingabefeld mit der Tiefe des Modells vorab befüllt wird
- //   document.getElementById('door_thickness').value = modelDepth;
-//}, function (xhr) {
-//    //console.log((xhr.loaded / xhr.total * 100) + '% loaded');  // Zeige Fortschritt an
-//}, function (error) {
-//   console.log("Error loading STL model", error);  // Zeige Fehler an
-//});
-
-// Event Listener für 'door-thickness' nach dem Laden des Modells
-//document.getElementById('door_thickness').addEventListener('input', function () {
-  //  var userInput = parseFloat(this.value);
-  //  if (!isNaN(userInput) && this.value !== "") {
-  //      doorThickness = userInput;  // Wenn der Benutzer einen Wert eingibt, überschreibe doorThickness
-  //  } else {
- //       this.value = modelDepth;  // Wenn leer, behalte die Tiefe des Modells bei
-  //  }
 });
 
 
@@ -521,12 +504,12 @@ document.getElementById('submitButton').addEventListener('click', function(event
 
     
 });
-// Render-Schleife
+
 function animate() {
     updateSelectionLineYPosition()
     requestAnimationFrame(animate);
-    controls.update();  // Aktualisiere die Steuerung
-    renderer.render(scene, camera);  // Render die Szene
+    controls.update();  
+    renderer.render(scene, camera); 
 }
 animate();
 

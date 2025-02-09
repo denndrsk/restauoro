@@ -39,26 +39,27 @@
         </div>
     </div>
 
-    <!-- Three.js und STLLoader einbinden -->
+    <!-- Embed Three.js and STLLoader -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three/examples/js/loaders/STLLoader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three/examples/js/controls/OrbitControls.js"></script>
 
     <script>
-        // Szene, Kamera und Renderer initialisieren
+        // Initialize scene, camera, and renderer
         var scene = new THREE.Scene();
         var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         var renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth * 0.8, window.innerHeight * 0.8);  // Dynamische Größenanpassung
         document.getElementById('viewer-container').appendChild(renderer.domElement);
 
-        // STLLoader und Modell-URL laden
+        // Load STLLoader and model URL
         var loader = new THREE.STLLoader();
-        var modelUrl = "{{ model_url }}";  // URL des bearbeiteten Modells
+        var modelUrl = "{{ model_url }}";  // URL of the model
+
 
         loader.load(modelUrl, function (geometry) {
             var material = new THREE.MeshStandardMaterial({ 
-                color: 0x8A8A8A,  // Dunkleres Grau
+                color: 0x5B5B5B, 
                 roughness: 0.5, 
                 metalness: 0.1 
             });
@@ -68,33 +69,32 @@
         });
 
         
-        // Gitter für die Ansicht hinzufügen
+        // Add grid to the view
         var gridHelper = new THREE.GridHelper(50, 50); // Größe und Anzahl der Linien
         gridHelper.rotation.x = Math.PI / 2; // Drehe das Gitter in die x/y-Ebene
         scene.add(gridHelper);
 
-        // Achsen-Helper hinzufügen und leicht nach oben verschieben, um Überlappung zu vermeiden
-        // Erstelle den AxesHelper mit der gewünschten Größe
-        var helper = new THREE.AxesHelper(0.1); // 5 Einheiten groß
+        // Add axis helper and slightly shift it upwards to avoid overlap
+        var helper = new THREE.AxesHelper(0.1); 
 
-        // Erstelle ein Material, das Farbänderungen unterstützt
+        // Create a material that supports color changes
         var material = new THREE.LineBasicMaterial({ vertexColors: THREE.VertexColors });
 
-        // Setze das Material für den AxesHelper
+        // Set the material for the AxesHelper
         helper.material = material;
 
-        // Zugriff auf das Farben-Attribut der Geometrie
+        // Access the color attribute of the geometry
         var colors = helper.geometry.attributes.color;
         const colorX = new THREE.Color(0xFF6E61);
         const colorY = new THREE.Color(0x6255A3);
         const colorZ = new THREE.Color(0xFFD61C);
         helper.setColors(colorX, colorY, colorZ);
-        // Achsen-Helper zur Szene hinzufügen
+        // Add the AxesHelper to the scene
         scene.add(helper);
         helper.position.z = 0.001;
         
         
-        // Lichter für die Szene hinzufügen
+        // Add lights to the scene
         var ambientLight = new THREE.AmbientLight(0x404040, 0.5);  // Dunkleres Umgebungslicht
         scene.add(ambientLight);
 
@@ -114,41 +114,27 @@
         pointLight4.position.set(-10, 10, -10);
         scene.add(pointLight4);
 
-        // Kamera-Position und Steuerung
-        // Positioniere die Kamera bei (x = -3.5, y = 2, z = 2.5)
-        camera.position.set(-3, -3, 5);
+        // Camera position and controls
+        camera.position.set(-3, -3, 4);
         camera.up.set(0, 0, 1);
         camera.lookAt(0, 0, 2);
-              
 
-
-        //orbitcontrolls ----------------------------------------------------------------
+        //OrbitControlls 
         var controls = new THREE.OrbitControls(camera, renderer.domElement);
 
-        // Dämpfung aktivieren
+        // Enable damping
         controls.enableDamping = true;
         controls.dampingFactor = 0.25;
 
-        // Zoom und Panning aktivieren
+        // Enable zoom and panning
         controls.enableZoom = true;
-        controls.enablePan = true; // Ermöglicht das Verschieben in der Höhe
+        controls.enablePan = true; 
+        // Allow panning for vertical movement
+        controls.screenSpacePanning = true;       
+        controls.rotateSpeed = 1.5; 
+        controls.zoomSpeed = 1.2; 
 
-        // Panning für die vertikale Bewegung erlauben
-        controls.screenSpacePanning = true; // Deaktiviert Panning nur auf der X/Y-Ebene
-
-        // Maximale Neigung der Kamera (verhindert das Kippen des Modells nach unten)
-        //controls.maxPolarAngle = Math.PI / 2; // Verhindert das Kippen unter den Horizont
-
-        // Steuere die Rotationsgeschwindigkeit
-        controls.rotateSpeed = 1.5; // Höhere Werte erhöhen die Drehgeschwindigkeit
-
-        // Steuere die Zoomgeschwindigkeit
-        controls.zoomSpeed = 1.2; // Steuere die Zoomgeschwindigkeit
-
-        //orbitcontrolls ----------------------------------------------------------------
-
-
-        // Animations-Loop
+        // Animation loop
         function animate() {
             requestAnimationFrame(animate);
             renderer.render(scene, camera);
@@ -157,7 +143,7 @@
         
         animate();
 
-        // Anpassung der Anzeige bei Fenstergrößeänderung
+        // Adjust display when window size changes
         window.addEventListener('resize', function () {
             renderer.setSize(window.innerWidth * 0.8, window.innerHeight * 0.8);
             camera.aspect = window.innerWidth / window.innerHeight;
